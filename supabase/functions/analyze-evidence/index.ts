@@ -171,6 +171,8 @@ async function main(req: Request) {
       .limit(100);
     if (error) throw error;
 
+    if (!rows?.length) throw new Error("No selected evidence was found for this investigation.");
+
     const metadata: Array<Record<string, unknown>> = [];
     const evidenceParts: Array<Record<string, unknown>> = [];
     const allowedEvidenceIds = new Set((rows ?? []).map((row) => row.id));
@@ -297,12 +299,19 @@ async function main(req: Request) {
     });
 
     await updateRun({ status: "complete", stage: stages[7], progress: 100, completed_at: new Date().toISOString() });
-    return json({ ok: true });
+    return json({ ok: true, status: "complete" });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Analysis failed.";
-    await updateRun({ status: "failed", error_message: detail, completed_at: new Date().toISOString() });
+
+    try {
+      await updateRun({ status: "failed", error_message: detail, completed_at: new Date().toISOString() });
+    } catch {
+      // Preserve the original failure when the status update itself cannot be written.
+    }
+
     const owner = await supabase.from("investigations").select("owner_id").eq("id", investigationId).maybeSingle();
     if (owner.data?.owner_id) {
+      await supabase.from("investigations").update({ status: "ready", updated_at: new Date().toISOString() }).eq("id", investigationId);
       await supabase.from("notifications").insert({
         user_id: owner.data.owner_id,
         investigation_id: investigationId,
@@ -317,8 +326,16 @@ async function main(req: Request) {
         metadata: { analysisRunId, error: detail },
       });
     }
-    return json({ error: detail }, 500);
+
+    // Analysis failures are represented by analysis_runs.status/error_message.
+    // Return HTTP 200 so the client does not lose the real diagnostic behind a
+    // generic "Edge Function returned a non-2xx status code" error.
+    return json({ ok: false, status: "failed", error: detail });
   }
 }
 
-Deno.serve((req) => main(req).catch((error) => json({ error: error instanceof Error ? error.message : "Request failed." }, 500)));
+Deno.serve((req) =>
+  main(req).catch((error) =>
+    json({ ok: false, status: "failed", error: error instanceof Error ? error.message : "Request failed." }),
+  ),
+);
