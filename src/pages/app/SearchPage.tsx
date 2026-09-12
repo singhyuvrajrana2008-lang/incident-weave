@@ -1,0 +1,7 @@
+import { useEffect,useMemo,useState } from "react";
+import { Search as SearchIcon } from "lucide-react";
+import { investigationService } from "../../lib/services";
+import type { Investigation } from "../../lib/types";
+import { Page } from "../../components/shell/Page";
+import { Input } from "../../components/ui";
+export default function SearchPage(){const [items,setItems]=useState<Investigation[]>([]);const [q,setQ]=useState("");useEffect(()=>{investigationService.list().then(setItems)},[]);const results=useMemo(()=>{const term=q.toLowerCase().trim();if(!term)return items.flatMap(i=>i.evidence.slice(0,5).map(e=>({kind:"evidence",label:e.filename,parent:i.name})));return items.flatMap(i=>[...i.evidence.filter(e=>e.filename.toLowerCase().includes(term)).map(e=>({kind:"evidence",label:e.filename,parent:i.name})),...i.events.filter(e=>(e.title+e.description).toLowerCase().includes(term)).map(e=>({kind:"event",label:e.title,parent:i.name}))])},[items,q]);return <Page eyebrow="Find" title="Search" subtitle="Search across evidence and reconstructed events."><div className="max-w-xl"><Input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search evidence or event text…" icon={<SearchIcon className="size-4"/>}/></div><div className="mt-6 divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">{results.map((r,i)=><div key={i} className="p-4"><div className="font-display text-sm">{r.label}</div><div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-fg-faint">{r.kind} · {r.parent}</div></div>)}</div></Page>}
