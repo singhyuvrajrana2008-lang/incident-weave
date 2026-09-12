@@ -1,95 +1,86 @@
 # IncidentWeave
 
-IncidentWeave is a multimodal incident reconstruction workspace for investigators working with fragmented case evidence. It correlates screenshots, documents, call logs, messages, transcripts and recordings into a source-attributed chronology, surfaces contradictions, and makes evidence gaps explicit.
+IncidentWeave is an AI-assisted multimodal incident and case investigation platform that helps investigators turn fragmented evidence into a clear, traceable incident reconstruction.
 
-> **Human-in-the-loop by design:** IncidentWeave organizes and explains evidence. It does not issue an autonomous verdict.
+## What it does
 
-## Product flow
+IncidentWeave brings together evidence such as:
+
+- Images and screenshots
+- PDFs and witness statements
+- Call logs and messages
+- CCTV frames
+- Notes and documents
+- Audio and transcripts
+
+It then correlates these sources to help reconstruct a chronological timeline, surface contradictions, identify missing or unknown evidence, and support human review.
 
 ```text
 Fragmented evidence
-      ↓
+        ↓
 Ingest / extract
-      ↓
+        ↓
 Cross-modal correlation
-      ↓
-Reconstruct timeline
-      ↓
-Detect contradictions
-      ↓
-Identify unknown / missing evidence
-      ↓
+        ↓
+Timeline reconstruction
+        ↓
+Contradiction detection
+        ↓
+Unknown / missing evidence
+        ↓
 Human investigator review
 ```
 
-## Frontend and backend
+## Core principle
 
-This repository contains the existing Figma Make-derived frontend foundation, rebuilt into a dark enterprise investigation experience, now connected to Supabase Auth, PostgreSQL, private Storage, Realtime and a server-side Gemini analysis Edge Function.
+**AI surfaces patterns. Investigators make decisions.**
 
-- React 19 + TypeScript
-- Vite
-- Tailwind CSS 4
-- React Router
-- Motion for interaction and transitions
-- Lucide icons
-- Centralized Supabase service layer with realistic fictional demo data retained only as a visual reference
+IncidentWeave is designed as a human-in-the-loop system. AI findings should remain traceable to source evidence and clearly distinguish observed information, inference, and uncertainty.
 
-## Core workspace
+## Planned technology stack
 
-- Dashboard
-- Investigations
-- New investigation / evidence intake
-- Relationship weave
-- Evidence browser
-- Timeline reconstruction
-- Contradictions
-- Unknowns / evidence gaps
-- Global search
-- Notifications
-- Profile and settings
+- React + TypeScript + Vite
+- Tailwind CSS + Motion
+- Supabase Auth
+- Supabase PostgreSQL
+- Supabase Storage
+- Supabase Row Level Security
+- Supabase Edge Functions / server-side application logic
+- Google Gemini API for multimodal reasoning
+- GitHub for version control
 
-## Demo case
+## Target workflow
 
-The seeded **Northbridge Incident** demonstrates how separate sources can produce a reconstructed sequence while preserving uncertainty. The demo data is fictional and intended for product demonstration only.
+1. Investigator creates an investigation.
+2. Evidence is uploaded and securely stored.
+3. Evidence is prepared for analysis.
+4. Gemini analyzes the evidence across modalities.
+5. Structured findings are persisted.
+6. IncidentWeave presents the timeline, contradictions, unknowns, confidence and source relationships.
+7. The investigator reviews and makes the final decision.
 
-## Backend implementation
+## Project status
 
-The backend is defined in `supabase/migrations/202609120001_incidentweave_backend.sql`. It creates relational tables for profiles, investigations, evidence, extractions, timeline events, contradictions, unknowns, analysis runs/results, notifications and audit logs. Row Level Security restricts every investigation record and private evidence object to its owning authenticated user.
+This repository is intentionally being reset as a clean starting point for the next implementation phase.
 
-Evidence is stored privately in the `evidence` Storage bucket at `{user_id}/{investigation_id}/{evidence_id}/{filename}`. The browser only receives the public Supabase URL and anon key. `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are used only by `supabase/functions/analyze-evidence` and must never be placed in frontend variables or committed.
+The completed frontend is being maintained separately as the UI source of truth. The backend will be rebuilt cleanly around that frontend using Supabase and Gemini.
 
-Create `.env.local` for the Vite app:
+## Security principles
 
-```bash
-VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
-```
+- Keep Gemini API credentials server-side.
+- Never commit secrets.
+- Keep sensitive evidence in private storage.
+- Enforce access through Supabase Row Level Security.
+- Do not treat AI output as an autonomous legal or criminal verdict.
 
-Configure the Edge Function and apply the migration to the existing Supabase project; do not create another database:
+## Hackathon
 
-```bash
-supabase secrets set GEMINI_API_KEY=... SUPABASE_SERVICE_ROLE_KEY=...
-supabase db push
-supabase functions deploy analyze-evidence
-```
+**HackDays Solan 2026 — Enkindle Club**
 
-The end-to-end flow is: Supabase Auth session → investigation insert → private evidence upload → `analysis_runs` record → server-side Gemini multimodal request → Zod-validated JSON → persisted timeline/contradiction/unknown records → real workspace data.
+Theme: **Google Gemini API**
 
-## Run locally
+Category: **Software / AI / Open Innovation**
 
-```bash
-npm install
-npm run dev
-```
+## License / demo data
 
-Production build:
-
-```bash
-npm run build
-```
-
-The connected Supabase project must be active before the migration and function can be deployed and live-tested. No production secrets are stored in this repository.
-
-## AI disclosure
-
-Gemini is intended for the reasoning and multimodal correlation layer. The interface exposes source attribution, confidence and review states so model output remains inspectable by a human investigator.
+Any future demo evidence should be synthetic or openly licensed and clearly identified as such.
