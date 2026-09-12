@@ -35,11 +35,9 @@ export async function createFallbackAnalysis(investigationId: string, incidentDa
   const dispatchId = byName.get("dispatch_report.txt") ?? ids[3] ?? securityId;
 
   for (const table of ["evidence_extractions", "timeline_events", "contradictions", "unknowns"] as const) {
-    const filter = table === "evidence_extractions" ? { evidence_id: ids } : { investigation_id: investigationId };
     const column = table === "evidence_extractions" ? "evidence_id" : "investigation_id";
-    const values = table === "evidence_extractions" ? ids : [];
-    if (table === "evidence_extractions" && values.length) {
-      const { error } = await client.from(table).delete().in(column, values);
+    if (table === "evidence_extractions" && ids.length) {
+      const { error } = await client.from(table).delete().in(column, ids);
       if (error) throw new Error(error.message);
     } else if (table !== "evidence_extractions") {
       const { error } = await client.from(table).delete().eq(column, investigationId);
@@ -47,17 +45,23 @@ export async function createFallbackAnalysis(investigationId: string, incidentDa
     }
   }
 
-  const observations = new Map<string, { relevant_time: string; confidence: string; observations: string[] }>([
-    ["security_log.txt", { relevant_time: "18:02–18:26", confidence: "high", observations: ["PX-1042 scanned at Dock 3.", "PX-1042 marked loaded at 18:07.", "Dock 3 CCTV interruption at 18:14.", "Package reported missing at 18:21."] }],
-    ["access_log.txt", { relevant_time: "18:09–18:19", confidence: "high", observations: ["Alex Morgan entered Dock 3 at 18:09.", "Sam Carter entered Dock 3 at 18:13.", "Vehicle 17 departed at 18:19."] }],
-    ["employee_statement.txt", { relevant_time: "18:10", confidence: "medium", observations: ["Alex Morgan reported seeing PX-1042 near Dock 3 at approximately 18:10."] }],
-    ["dispatch_report.txt", { relevant_time: "18:15–18:19", confidence: "high", observations: ["Vehicle 17 departed at 18:19.", "Driver confirmed PX-1042 was not loaded.", "Package was not found during the initial search."] }],
+  const observations = new Map<string, { relevant_time: string; observations: string[] }>([
+    ["security_log.txt", { relevant_time: "18:02–18:26", observations: ["PX-1042 scanned at Dock 3.", "PX-1042 marked loaded at 18:07.", "Dock 3 CCTV interruption at 18:14.", "Package reported missing at 18:21."] }],
+    ["access_log.txt", { relevant_time: "18:09–18:19", observations: ["Alex Morgan entered Dock 3 at 18:09.", "Sam Carter entered Dock 3 at 18:13.", "Vehicle 17 departed at 18:19."] }],
+    ["employee_statement.txt", { relevant_time: "18:10", observations: ["Alex Morgan reported seeing PX-1042 near Dock 3 at approximately 18:10."] }],
+    ["dispatch_report.txt", { relevant_time: "18:15–18:19", observations: ["Vehicle 17 departed at 18:19.", "Driver confirmed PX-1042 was not loaded.", "Package was not found during the initial search."] }],
   ]);
 
   for (const row of evidence ?? []) {
     const key = String(row.filename).toLowerCase();
-    const preset = observations.get(key) ?? { relevant_time: "—", confidence: "medium", observations: ["Evidence source uploaded for cross-source analysis."] };
-    const { error } = await client.from("evidence_extractions").insert({ evidence_id: row.id, extracted_text: preset.observations.join(" "), observations: preset.observations, relevant_time: preset.relevant_time, confidence: preset.confidence });
+    const preset = observations.get(key) ?? { relevant_time: "—", observations: ["Evidence source uploaded for cross-source analysis."] };
+    // Keep this compatible with the current schema: evidence_extractions has no `confidence` column.
+    const { error } = await client.from("evidence_extractions").insert({
+      evidence_id: row.id,
+      extracted_text: preset.observations.join(" "),
+      observations: preset.observations,
+      relevant_time: preset.relevant_time,
+    });
     if (error) throw new Error(error.message);
     const { error: updateError } = await client.from("evidence").update({ status: "verified" }).eq("id", row.id);
     if (updateError) throw new Error(updateError.message);
