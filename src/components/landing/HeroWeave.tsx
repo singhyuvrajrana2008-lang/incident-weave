@@ -1,60 +1,71 @@
 import { motion } from "motion/react";
-import { FileText, Image, MessageSquare, Phone, Mic } from "lucide-react";
+import { FileText, Image as ImageIcon, MessageSquare, Phone, Mic, ArrowUpRight, AlertTriangle, HelpCircle } from "lucide-react";
 
-const fragments = [
-  { Icon: Image, label: "Screenshot", tone: "#60a5fa" },
-  { Icon: Phone, label: "Call Log", tone: "#38bdf8" },
-  { Icon: FileText, label: "PDF", tone: "#f05252" },
-  { Icon: MessageSquare, label: "Message", tone: "#22d3ee" },
-  { Icon: Mic, label: "Recording", tone: "#34d399" },
+const sources = [
+  { icon:ImageIcon, label:"CCTV frame", meta:"10:18:47", tone:"text-accent-3" },
+  { icon:Phone, label:"Call log", meta:"10:14:21", tone:"text-accent" },
+  { icon:FileText, label:"Witness statement", meta:"10:20:00", tone:"text-amber" },
+  { icon:MessageSquare, label:"Message capture", meta:"10:16:03", tone:"text-verified" },
 ];
 
-const events = ["10:12", "10:14", "10:16", "10:18", "10:21"];
+const events = [
+  { time:"10:14", label:"Call recorded", tone:"verified" },
+  { time:"10:16", label:"Message captured", tone:"verified" },
+  { time:"10:18", label:"Lobby appearance", tone:"verified" },
+  { time:"10:20", label:"Location conflict", tone:"crimson" },
+  { time:"10:21", label:"Evidence gap", tone:"amber" },
+];
 
 export function HeroWeave() {
   return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
-      <svg viewBox="0 0 600 420" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        {fragments.map((f, i) => (
-          <motion.path
-            key={f.label}
-            d={`M90 ${65 + i * 66} C210 ${65 + i * 66}, 245 210, 300 210`}
-            fill="none" stroke={f.tone} strokeWidth="1.5" strokeOpacity=".5"
-            initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: .55 }}
-            transition={{ duration: .9, delay: i * .12 }}
-          />
-        ))}
-        {events.map((_, i) => (
-          <motion.path key={i} d={`M300 210 C380 210, 420 ${55 + i * 72}, 505 ${55 + i * 72}`}
-            fill="none" stroke={i === 3 ? "#f05252" : i === 4 ? "#fbbf24" : "#38bdf8"}
-            strokeWidth={i === 3 ? 2 : 1.5} strokeOpacity=".55" strokeDasharray={i === 3 ? "5 5" : undefined}
-            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: .8, delay: .8 + i * .18 }} />
-        ))}
-        <circle cx="300" cy="210" r="24" fill="#0b0f14" stroke="#38bdf8" strokeWidth="2" />
-        <motion.circle cx="300" cy="210" r="8" fill="#38bdf8" animate={{ opacity: [.35,1,.35], r:[7,10,7] }} transition={{ duration:2.2, repeat:Infinity }} />
-      </svg>
-      <div className="absolute left-5 top-5 flex flex-col gap-2">
-        {fragments.map(({ Icon, label, tone }, i) => (
-          <motion.div key={label} className="flex items-center gap-2 rounded-md border border-line-2 bg-surface/90 px-3 py-2 backdrop-blur"
-            initial={{ opacity:0,x:-12 }} animate={{ opacity:1,x:0 }} transition={{ delay:i*.1 }}>
-            <Icon className="size-3.5" style={{ color:tone }} />
-            <span className="font-mono text-[10px] text-fg-muted">{label}</span>
-          </motion.div>
-        ))}
+    <div className="relative overflow-hidden rounded-[22px] border border-line bg-[#0d151d] shadow-glow">
+      <div className="pointer-events-none absolute inset-0 grid-texture opacity-70" />
+      <div className="relative border-b border-line px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[.22em] text-fg-faint">Investigation view</div>
+            <div className="mt-1 font-display text-sm font-semibold text-fg">Evidence correlation</div>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-verified/20 bg-verified/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-verified"><span className="size-1.5 rounded-full bg-verified pulse-ring"/> Live reconstruction</div>
+        </div>
       </div>
-      <div className="absolute right-5 top-8 flex flex-col gap-3">
-        {events.map((time, i) => (
-          <motion.div key={time} className="flex items-center gap-2 rounded-md border px-3 py-2 bg-surface/80"
-            style={{ borderColor: i===3 ? "#f0525244" : i===4 ? "#fbbf2444" : "#38bdf844" }}
-            initial={{ opacity:0,x:12 }} animate={{ opacity:1,x:0 }} transition={{ delay:.9+i*.18 }}>
-            <span className="size-1.5 rounded-full" style={{ background: i===3 ? "#f05252" : i===4 ? "#fbbf24" : "#38bdf8" }} />
-            <span className="font-mono text-[10px]" style={{ color: i===3 ? "#f05252" : i===4 ? "#fbbf24" : "#38bdf8" }}>{time}</span>
-            {i===3 && <span className="font-mono text-[9px] text-crimson">conflict</span>}
-            {i===4 && <span className="font-mono text-[9px] text-amber">unknown</span>}
-          </motion.div>
-        ))}
+
+      <div className="relative grid min-h-[430px] gap-4 p-5 sm:p-6 lg:grid-cols-[.78fr_1.44fr_.78fr] lg:items-center">
+        <div className="space-y-2">
+          <div className="mb-3 font-mono text-[9px] uppercase tracking-[.18em] text-fg-faint">Source fragments</div>
+          {sources.map(({icon:Icon,label,meta,tone},i)=><motion.div key={label} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*.08}} className="group rounded-lg border border-line bg-surface/80 p-3 transition-colors hover:border-line-strong hover:bg-surface-2">
+            <div className="flex items-center gap-3"><div className="grid size-8 place-items-center rounded-md border border-line-2 bg-bg-2"><Icon className={`size-3.5 ${tone}`}/></div><div className="min-w-0"><div className="truncate text-xs font-semibold text-fg">{label}</div><div className="mt-0.5 font-mono text-[9px] text-fg-faint">{meta}</div></div><ArrowUpRight className="ml-auto size-3.5 text-fg-faint transition-colors group-hover:text-accent"/></div>
+          </motion.div>)}
+        </div>
+
+        <div className="relative min-h-[250px]">
+          <svg viewBox="0 0 520 280" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <defs><linearGradient id="weave-blue" x1="0" x2="1"><stop offset="0" stopColor="#68b5ff" stopOpacity=".1"/><stop offset=".5" stopColor="#68b5ff" stopOpacity=".7"/><stop offset="1" stopColor="#55e2d7" stopOpacity=".15"/></linearGradient></defs>
+            {[44,92,140,188].map((y,i)=><motion.path key={y} d={`M38 ${y} C150 ${y}, 168 140, 260 140 S360 ${y}, 482 ${y}`} fill="none" stroke="url(#weave-blue)" strokeWidth="1.5" strokeDasharray="5 7" initial={{pathLength:0,opacity:0}} animate={{pathLength:1,opacity:.7}} transition={{duration:1.1,delay:i*.12}}/>)}
+            <motion.circle cx="260" cy="140" r="56" fill="#101b25" stroke="#34506a" strokeWidth="1.5" initial={{scale:.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{duration:.6}}/>
+            <circle cx="260" cy="140" r="38" fill="none" stroke="#68b5ff" strokeOpacity=".18" strokeDasharray="3 6"/>
+            <motion.circle cx="260" cy="140" r="9" fill="#68b5ff" animate={{r:[8,11,8],opacity:[.65,1,.65]}} transition={{duration:2.2,repeat:Infinity}}/>
+            <text x="260" y="136" textAnchor="middle" fill="#f4f7fb" fontSize="11" fontWeight="700">Correlation</text>
+            <text x="260" y="153" textAnchor="middle" fill="#7d8b99" fontSize="8">12 linked signals</text>
+          </svg>
+          <div className="absolute left-1/2 top-[calc(50%+86px)] -translate-x-1/2 rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.16em] text-accent">Normalized event graph</div>
+        </div>
+
+        <div>
+          <div className="mb-3 font-mono text-[9px] uppercase tracking-[.18em] text-fg-faint">Reconstructed sequence</div>
+          <div className="space-y-2">
+            {events.map((event,i)=><motion.div key={event.time} initial={{opacity:0,x:10}} animate={{opacity:1,x:0}} transition={{delay:.35+i*.08}} className="flex items-center gap-3 rounded-lg border border-line bg-surface/70 px-3 py-2.5">
+              <div className={`grid size-7 shrink-0 place-items-center rounded-full border ${event.tone==='crimson'?'border-crimson/25 bg-crimson/10':'border-line-2 bg-bg-2'}`}><span className={`font-mono text-[9px] ${event.tone==='crimson'?'text-crimson':event.tone==='amber'?'text-amber':'text-accent'}`}>{i+1}</span></div>
+              <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-semibold text-fg">{event.label}</div><div className="font-mono text-[9px] text-fg-faint">{event.time}</div></div>
+              {event.tone==='crimson'?<AlertTriangle className="size-3.5 text-crimson"/>:event.tone==='amber'?<HelpCircle className="size-3.5 text-amber"/>:<span className="size-1.5 rounded-full bg-verified"/>}
+            </motion.div>)}
+          </div>
+        </div>
       </div>
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-8 font-mono text-[10px] uppercase tracking-[.25em] text-accent">Correlation</div>
+
+      <div className="grid border-t border-line sm:grid-cols-3">
+        {[['06','evidence sources','linked'],['05','timeline events','normalized'],['02','review flags','require attention']].map(([value,label,note])=><div key={label} className="border-b border-line p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><div className="font-mono text-lg font-medium tabular text-fg">{value}</div><div className="mt-1 text-[10px] uppercase tracking-[.12em] text-fg-faint">{label}</div><div className="mt-1 text-[10px] text-fg-dim">{note}</div></div>)}
+      </div>
     </div>
   );
 }
