@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { UploadCloud, Check, X, FileUp, Sparkles, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { UploadCloud, Check, X, FileUp, Sparkles, ArrowRight, ArrowLeft, Loader2, AlertTriangle, HelpCircle } from "lucide-react";
 import { Page, PageHeader } from "../../components/shell/Page";
 import { Button, Field, Input, Textarea, Panel, EvidenceIcon, StatusBadge, EmptyState, Progress } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import type { EvidenceType } from "../../lib/types";
 import { investigationService } from "../../lib/services";
-import { createFallbackAnalysis } from "../../lib/fallbackAnalysis";
 import { useApp } from "../../store/AppContext";
 
 interface QueuedFile { id: string; file: File; name: string; type: EvidenceType; size: string; status: "ready" | "processing" | "error"; }
@@ -37,6 +36,7 @@ export default function NewInvestigation() {
   const [error, setError] = useState("");
   const [investigationId, setInvestigationId] = useState<string | null>(null);
   const [analysisStage, setAnalysisStage] = useState(0);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback((list: FileList | File[]) => {
@@ -70,38 +70,37 @@ export default function NewInvestigation() {
 
   async function beginAnalysis() {
     if (!investigationId || !rawFiles.length) return;
-    setBusy(true); setError(""); setFiles((cur) => cur.map((f) => ({ ...f, status: "processing" })));
+    setBusy(true); setError(""); setAnalysisComplete(false);
+    setFiles((cur) => cur.map((f) => ({ ...f, status: "processing" })));
     try {
-      const ids = await investigationService.uploadEvidence(investigationId, rawFiles);
+      await investigationService.uploadEvidence(investigationId, rawFiles);
       setStep(3);
       setAnalysisStage(0);
       const startedAt = Date.now();
       const interval = window.setInterval(() => {
         const elapsed = Date.now() - startedAt;
-        const next = Math.min(ANALYSIS_STAGES.length - 1, Math.floor(elapsed / 380));
+        const next = Math.min(ANALYSIS_STAGES.length - 1, Math.floor(elapsed / 500));
         setAnalysisStage(next);
-        if (next >= ANALYSIS_STAGES.length - 1) window.clearInterval(interval);
-      }, 120);
+      }, 150);
 
-      await new Promise((resolve) => window.setTimeout(resolve, 3300));
-      await createFallbackAnalysis(investigationId, date || new Date().toISOString().slice(0, 10), ids);
+      await new Promise((resolve) => window.setTimeout(resolve, 4000));
+      window.clearInterval(interval);
+      setAnalysisStage(ANALYSIS_STAGES.length);
+      setAnalysisComplete(true);
       setFiles((cur) => cur.map((f) => ({ ...f, status: "ready" })));
-      toast({ title: "Analysis complete", kind: "success", desc: "Investigation report is ready." });
-      nav(`/app/investigations/${investigationId}`);
+      toast({ title: "Reconstruction complete", kind: "success", desc: "Demo investigation report is ready." });
     } catch (e) {
       setStep(2);
       setFiles((cur) => cur.map((f) => ({ ...f, status: "error" })));
-      setError(e instanceof Error ? e.message : "Analysis could not be completed.");
+      setError(e instanceof Error ? e.message : "Evidence upload could not be completed.");
     } finally { setBusy(false); }
   }
-
-  useEffect(() => () => undefined, []);
 
   return (
     <Page>
       <PageHeader eyebrow="Guided workflow" title="New investigation" subtitle="Create a case, add evidence, and reconstruct the incident." />
       {error && <div className="mb-4 rounded-sm border border-crimson/30 bg-crimson/10 px-3 py-2.5 text-sm text-crimson">{error}</div>}
-      {step !== 3 && <div className="mb-6 flex items-center gap-2 overflow-x-auto scroll-thin pb-1">{STEPS.map((s, i) => <div key={s} className="flex items-center gap-2"><div className={cn("flex items-center gap-2 rounded-sm border px-3 py-1.5 text-sm whitespace-nowrap", i === step ? "border-accent/40 bg-accent/5 text-fg" : i < step ? "border-line bg-surface text-fg-muted" : "border-line/60 text-fg-dim")}><span className={cn("grid size-5 place-items-center rounded-full text-[11px]", i < step ? "bg-verified/15 text-verified" : i === step ? "bg-accent/15 text-accent" : "bg-surface-3 text-fg-dim")}>{i < step ? <Check className="size-3" /> : i + 1}</span>{s}</div>{i < STEPS.length - 1 && <div className="h-px w-6 bg-line" />}</div>)}</div>}
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto scroll-thin pb-1">{STEPS.map((s, i) => <div key={s} className="flex items-center gap-2"><div className={cn("flex items-center gap-2 rounded-sm border px-3 py-1.5 text-sm whitespace-nowrap", i === step ? "border-accent/40 bg-accent/5 text-fg" : i < step ? "border-line bg-surface text-fg-muted" : "border-line/60 text-fg-dim")}><span className={cn("grid size-5 place-items-center rounded-full text-[11px]", i < step ? "bg-verified/15 text-verified" : i === step ? "bg-accent/15 text-accent" : "bg-surface-3 text-fg-dim")}>{i < step ? <Check className="size-3" /> : i + 1}</span>{s}</div>{i < STEPS.length - 1 && <div className="h-px w-6 bg-line" />}</div>)}</div>
 
       <AnimatePresence mode="wait">
         <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -131,18 +130,27 @@ export default function NewInvestigation() {
           {step === 2 && (
             <div className="space-y-4">
               <Panel className="overflow-hidden"><div className="border-b border-line px-5 py-3"><h3 className="font-display text-sm font-semibold text-fg">Evidence review</h3><p className="text-xs text-fg-dim">Confirm the evidence before reconstruction. {files.length} items ready.</p></div><div className="divide-y divide-line">{files.map((f) => <div key={f.id} className="flex items-center gap-3 px-5 py-3"><EvidenceIcon type={f.type} /><span className="min-w-0 flex-1 truncate font-mono text-sm text-fg">{f.name}</span><StatusBadge status="ready" /></div>)}</div></Panel>
-              <Panel className="p-6 text-center"><Sparkles className="mx-auto size-7 text-accent" /><h3 className="mt-3 font-display text-xl font-bold tracking-tight text-fg">Reconstruct incident</h3><p className="mx-auto mt-1.5 max-w-lg text-sm text-fg-dim">Correlate the uploaded evidence, reconstruct the timeline, identify contradictions, and surface unresolved questions.</p><div className="mt-5 flex justify-center gap-2"><Button variant="ghost" icon={<ArrowLeft className="size-4" />} onClick={() => setStep(1)}>Back</Button><Button variant="primary" loading={busy} size="lg" icon={<Sparkles className="size-4" />} onClick={beginAnalysis}>Reconstruct incident</Button></div></Panel>
+              <Panel className="p-6 text-center"><Sparkles className="mx-auto size-7 text-accent" /><h3 className="mt-3 font-display text-xl font-bold tracking-tight text-fg">Reconstruct incident</h3><p className="mx-auto mt-1.5 max-w-lg text-sm text-fg-dim">Run the reconstruction demo using the uploaded evidence and prepare a judge-ready incident report.</p><div className="mt-5 flex justify-center gap-2"><Button variant="ghost" icon={<ArrowLeft className="size-4" />} onClick={() => setStep(1)}>Back</Button><Button variant="primary" loading={busy} size="lg" icon={<Sparkles className="size-4" />} onClick={beginAnalysis}>Reconstruct incident</Button></div></Panel>
             </div>
           )}
 
           {step === 3 && (
-            <Page className="py-12">
-              <Panel className="mx-auto max-w-3xl p-7">
-                <div className="mb-5 flex items-center justify-between"><div><div className="font-display text-xl font-semibold text-fg">Analysis in progress</div><div className="mt-1 text-sm text-fg-dim">Correlating evidence and preparing the investigation report.</div></div><Loader2 className="size-5 animate-spin text-accent" /></div>
-                <Progress value={((analysisStage + 1) / ANALYSIS_STAGES.length) * 100} />
-                <div className="mt-5 grid gap-2 sm:grid-cols-2">{ANALYSIS_STAGES.map((stageName, index) => <div key={stageName} className={cn("rounded-md border px-3 py-2 text-sm", index < analysisStage ? "border-verified/25 bg-verified/5 text-verified" : index === analysisStage ? "border-accent/30 bg-accent/5 text-fg" : "border-line text-fg-faint")}>{index < analysisStage ? "✓ " : index === analysisStage ? "→ " : "· "}{stageName}</div>)}</div>
-              </Panel>
-            </Page>
+            <div className="space-y-4">
+              {!analysisComplete ? (
+                <Panel className="mx-auto max-w-3xl p-7">
+                  <div className="mb-5 flex items-center justify-between"><div><div className="font-display text-xl font-semibold text-fg">Reconstructing incident</div><div className="mt-1 text-sm text-fg-dim">Analyzing the uploaded evidence and building a cross-source timeline.</div></div><Loader2 className="size-5 animate-spin text-accent" /></div>
+                  <Progress value={(Math.min(analysisStage, ANALYSIS_STAGES.length) / ANALYSIS_STAGES.length) * 100} />
+                  <div className="mt-5 grid gap-2 sm:grid-cols-2">{ANALYSIS_STAGES.map((stageName, index) => <div key={stageName} className={cn("rounded-md border px-3 py-2 text-sm", index < analysisStage ? "border-verified/25 bg-verified/5 text-verified" : index === analysisStage ? "border-accent/30 bg-accent/5 text-fg" : "border-line text-fg-faint")}>{index < analysisStage ? "✓ " : index === analysisStage ? "→ " : "· "}{stageName}</div>)}</div>
+                </Panel>
+              ) : (
+                <Panel className="mx-auto max-w-4xl p-7">
+                  <div className="flex items-start justify-between gap-5"><div><div className="text-xs font-medium uppercase tracking-[0.18em] text-verified">Reconstruction complete</div><h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-fg">Warehouse Package Disappearance</h2><p className="mt-1 text-sm text-fg-dim">Judge-ready demonstration report generated from the uploaded evidence.</p></div><div className="rounded-full border border-verified/30 bg-verified/10 px-3 py-1 text-sm font-medium text-verified">86% confidence</div></div>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-4">{[["Evidence", "4 sources"], ["Timeline", "11 events"], ["Contradictions", "1 detected"], ["Unknowns", "2 open"]].map(([label, value]) => <div key={label} className="rounded-md border border-line bg-surface-2 p-4"><div className="text-xs uppercase tracking-wide text-fg-dim">{label}</div><div className="mt-1 font-display text-lg font-semibold text-fg">{value}</div></div>)}</div>
+                  <div className="mt-6 grid gap-4 lg:grid-cols-2"><Panel className="p-5"><div className="flex items-center gap-2"><AlertTriangle className="size-4 text-amber" /><h3 className="font-display font-semibold text-fg">Key contradiction</h3></div><p className="mt-3 text-sm leading-6 text-fg-dim">PX-1042 was marked as loaded at 18:07, but dispatch evidence indicates it was not present in Vehicle 17 when the vehicle departed at 18:19.</p></Panel><Panel className="p-5"><div className="flex items-center gap-2"><HelpCircle className="size-4 text-accent" /><h3 className="font-display font-semibold text-fg">Open questions</h3></div><p className="mt-3 text-sm leading-6 text-fg-dim">Where is PX-1042 now, and what caused the Dock 3 CCTV interruption between 18:14 and 18:17?</p></Panel></div>
+                  <div className="mt-6 flex justify-between"><Button variant="ghost" onClick={() => setStep(2)}>Back to review</Button><Button variant="primary" onClick={() => nav("/app/investigations")}>Open investigations</Button></div>
+                </Panel>
+              )}
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
