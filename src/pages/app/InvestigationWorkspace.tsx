@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, useNavigate } from "react-router-dom";
 import {
   RefreshCw,
   Plus,
@@ -35,6 +35,7 @@ import { cn } from "../../lib/cn";
 
 export default function InvestigationWorkspace() {
   const { id } = useParams();
+  const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const { toast } = useApp();
   const [inv, setInv] = useState<Investigation | null | undefined>(undefined);
@@ -46,6 +47,8 @@ export default function InvestigationWorkspace() {
   const [selContradiction, setSelContradiction] = useState<string | null>(null);
   const [inspectEvidence, setInspectEvidence] = useState<string | null>(null);
   const [drawerContradiction, setDrawerContradiction] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setInv(undefined);
@@ -108,6 +111,20 @@ export default function InvestigationWorkspace() {
     setSelContradiction(null);
   }
 
+  async function deleteInvestigation() {
+    if (!id || !inv || deleting) return;
+    if (!window.confirm(`Delete “${inv.name}”? This permanently removes the investigation, its evidence records, analysis results, and private Storage files.`)) return;
+    setDeleting(true);
+    try {
+      await investigationService.delete(id);
+      toast({ title: "Investigation deleted", kind: "success", desc: `${inv.name} was permanently removed.` });
+      nav("/app/investigations");
+    } catch (error) {
+      setDeleting(false);
+      toast({ title: "Delete failed", kind: "danger", desc: error instanceof Error ? error.message : "Unable to delete this investigation." });
+    }
+  }
+
   if (inv === undefined) return <Page><WorkspaceSkeleton /></Page>;
   if (inv === null)
     return (
@@ -151,7 +168,15 @@ export default function InvestigationWorkspace() {
             <Button variant="secondary" size="sm" icon={<RefreshCw className="size-3.5" />} onClick={() => toast({ title: "Re-analysis queued", kind: "info", desc: "Correlating latest evidence…" })}>Re-run analysis</Button>
             <Button variant="secondary" size="sm" icon={<Plus className="size-3.5" />} onClick={() => toast({ title: "Add evidence", kind: "info", desc: "Open the intake to add sources." })}>Add evidence</Button>
             <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />} onClick={() => toast({ title: "Export started", kind: "success", desc: "Preparing investigation report." })}>Export</Button>
-            <Button variant="ghost" size="sm" className="px-2"><MoreHorizontal className="size-4" /></Button>
+            <div className="relative">
+              <Button variant="ghost" size="sm" className="px-2" aria-label="Investigation actions" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><MoreHorizontal className="size-4" /></Button>
+              {menuOpen && (
+                <div className="absolute right-0 top-10 z-20 min-w-48 rounded-md border border-line-2 bg-raised p-1 shadow-xl">
+                  <button className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-fg-muted hover:bg-surface-2 hover:text-fg" onClick={async () => { if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href); setMenuOpen(false); toast({ title: "Link copied", kind: "success", desc: "Investigation link copied to your clipboard." }); }}>Copy investigation link</button>
+                  <button disabled={deleting} className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-crimson hover:bg-crimson/10 disabled:opacity-50" onClick={() => { setMenuOpen(false); void deleteInvestigation(); }}>{deleting ? "Deleting…" : "Delete investigation"}</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
