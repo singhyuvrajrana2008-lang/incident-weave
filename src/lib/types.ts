@@ -16,20 +16,20 @@ export interface Evidence {
   confidence: Confidence;
   sourceId: string;
   observations: string[];
-  relatedEvents: string[];
-  relatedContradictions: string[];
+  relatedEvents: string[]; // event ids
+  relatedContradictions: string[]; // contradiction ids
   notes?: string;
 }
 
 export interface TimelineEvent {
   id: string;
-  time: string;
+  time: string; // HH:MM:SS
   date: string;
   title: string;
   description: string;
   confidence: Confidence;
-  sources: string[];
-  contradiction?: string;
+  sources: string[]; // evidence ids
+  contradiction?: string; // contradiction id if involved
   label: "evidence-backed" | "inferred" | "ai-observation" | "uncertain";
 }
 

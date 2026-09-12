@@ -1,4 +1,51 @@
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCircle2, AlertTriangle, HelpCircle, Info, Check } from "lucide-react";
+import { Page, PageHeader } from "../../components/shell/Page";
+import { Button, EmptyState, Panel, StatusDot } from "../../components/ui";
+import { cn } from "../../lib/cn";
 import { useApp } from "../../store/AppContext";
-import { Page } from "../../components/shell/Page";
-export default function Notifications(){const {notifications,markRead,markAllRead}=useApp();return <Page eyebrow="Workspace" title="Notifications" subtitle="Review new findings and workflow updates."><div className="mb-4 flex justify-end"><button onClick={markAllRead} className="flex items-center gap-2 text-xs text-fg-dim hover:text-fg"><CheckCheck className="size-3.5"/> Mark all read</button></div><div className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">{notifications.map(n=><button onClick={()=>markRead(n.id)} key={n.id} className={`flex w-full items-start gap-4 p-5 text-left hover:bg-surface-2 ${!n.read?'bg-accent/5':''}`}><Bell className={`mt-0.5 size-4 ${n.read?'text-fg-faint':'text-accent'}`}/><div><div className="font-display text-sm font-medium">{n.title}</div><p className="mt-1 text-sm text-fg-dim">{n.message}</p><div className="mt-2 font-mono text-[10px] text-fg-faint">{n.createdAt}</div></div></button>)}</div></Page>}
+
+const iconFor = { success: CheckCircle2, danger: AlertTriangle, warn: HelpCircle, info: Info };
+const toneFor = { success: "text-verified", danger: "text-crimson", warn: "text-amber", info: "text-accent" };
+
+export default function Notifications() {
+  const { notifications, markRead, markAllRead, unreadCount } = useApp();
+
+  return (
+    <Page className="max-w-3xl">
+      <PageHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up."}
+        actions={unreadCount > 0 && <Button variant="secondary" size="sm" icon={<Check className="size-3.5" />} onClick={markAllRead}>Mark all read</Button>}
+      />
+
+      {notifications.length === 0 ? (
+        <Panel><EmptyState icon={<Bell className="size-6" />} title="No notifications" description="When analyses complete or contradictions are detected, they'll show up here." /></Panel>
+      ) : (
+        <Panel className="divide-y divide-line overflow-hidden">
+          {notifications.map((n) => {
+            const Icon = iconFor[n.kind];
+            return (
+              <button
+                key={n.id}
+                onClick={() => markRead(n.id)}
+                className={cn("flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-2", !n.read && "bg-accent/[0.03]")}
+              >
+                <div className="grid size-9 shrink-0 place-items-center rounded-sm border border-line-2 bg-surface-2">
+                  <Icon className={cn("size-4.5", toneFor[n.kind])} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-fg">{n.title}</span>
+                    {!n.read && <StatusDot tone="accent" />}
+                  </div>
+                  <p className="mt-0.5 text-sm text-fg-dim">{n.body}</p>
+                </div>
+                <span className="shrink-0 text-xs text-fg-faint">{n.time}</span>
+              </button>
+            );
+          })}
+        </Panel>
+      )}
+    </Page>
+  );
+}

@@ -1,7 +1,64 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle,CheckCircle2,MailCheck,ArrowLeft } from "lucide-react";
+import { AlertCircle, CheckCircle2, MailCheck, ArrowLeft } from "lucide-react";
 import { AuthLayout } from "./AuthLayout";
-import { Button,Field,Input } from "../../components/ui";
+import { Button, Field, Input } from "../../components/ui";
 import { authService } from "../../lib/services";
-export default function ForgotPassword(){const[email,setEmail]=useState("");const[status,setStatus]=useState<"idle"|"sending"|"sent"|"error">("idle");const[error,setError]=useState("");async function submit(e:React.FormEvent){e.preventDefault();setStatus("sending");setError("");try{await authService.resetPassword(email);setStatus("sent");}catch(err){setStatus("error");setError((err as Error).message==="network"?"Network error — please retry.":(err as Error).message);}}if(status==="sent")return <AuthLayout title="Check your email" subtitle="Reset instructions are on their way."><div className="rounded-md border border-verified/30 bg-verified/10 p-5 text-center"><MailCheck className="mx-auto size-8 text-verified"/><p className="mt-3 text-sm text-fg">We sent a password reset link to <span className="font-mono text-verified">{email}</span>.</p><p className="mt-1 text-sm text-fg-dim">Follow the link in the email to set a new password.</p></div><div className="mt-5 flex flex-col gap-2"><Button variant="secondary" onClick={()=>setStatus("idle")}>Use a different email</Button><Link to="/sign-in"><Button variant="ghost" className="w-full" icon={<ArrowLeft className="size-4"/>}>Back to sign in</Button></Link></div></AuthLayout>;return <AuthLayout title="Reset your password" subtitle="Enter your email and we'll send a reset link."><form onSubmit={submit} className="space-y-4">{status==="error"&&<div className="flex items-start gap-2 rounded-sm border border-crimson/30 bg-crimson/10 px-3 py-2.5 text-sm text-crimson"><AlertCircle className="mt-0.5 size-4 shrink-0"/>{error}</div>}<Field label="Email"><Input type="email" required autoFocus value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@fieldoffice.gov"/></Field><Button type="submit" variant="primary" size="lg" className="w-full" loading={status==="sending"} icon={status==="idle"?<CheckCircle2 className="size-4"/>:undefined}>Send reset link</Button></form><Link to="/sign-in" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-fg-dim"><ArrowLeft className="size-4"/>Back to sign in</Link></AuthLayout>;}
+
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    setError("");
+    try {
+      await authService.resetPassword(email);
+      setStatus("sent");
+    } catch (err) {
+      setStatus("error");
+      setError((err as Error).message === "network" ? "Network error — please retry." : (err as Error).message);
+    }
+  }
+
+  if (status === "sent") {
+    return (
+      <AuthLayout title="Check your email" subtitle="Reset instructions are on their way.">
+        <div className="rounded-md border border-verified/30 bg-verified/10 p-5 text-center">
+          <MailCheck className="mx-auto size-8 text-verified" />
+          <p className="mt-3 text-sm text-fg">
+            We sent a password reset link to <span className="font-mono text-verified">{email}</span>.
+          </p>
+          <p className="mt-1 text-sm text-fg-dim">Follow the link in the email to set a new password.</p>
+        </div>
+        <div className="mt-5 flex flex-col gap-2">
+          <Button variant="secondary" onClick={() => setStatus("idle")}>Use a different email</Button>
+          <Link to="/sign-in"><Button variant="ghost" className="w-full" icon={<ArrowLeft className="size-4" />}>Back to sign in</Button></Link>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout title="Reset your password" subtitle="Enter your email and we'll send a reset link.">
+      <form onSubmit={submit} className="space-y-4">
+        {status === "error" && (
+          <div className="flex items-start gap-2 rounded-sm border border-crimson/30 bg-crimson/10 px-3 py-2.5 text-sm text-crimson">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
+          </div>
+        )}
+        <Field label="Email">
+          <Input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@fieldoffice.gov" />
+        </Field>
+        <Button type="submit" variant="primary" size="lg" className="w-full" loading={status === "sending"} icon={status === "idle" ? <CheckCircle2 className="size-4" /> : undefined}>
+          Send reset link
+        </Button>
+      </form>
+      <Link to="/sign-in" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-fg-dim hover:text-fg">
+        <ArrowLeft className="size-4" /> Back to sign in
+      </Link>
+    </AuthLayout>
+  );
+}
