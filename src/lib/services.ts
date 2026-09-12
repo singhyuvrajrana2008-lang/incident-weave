@@ -42,13 +42,18 @@ export const investigationService = {
     const client = requireSupabase();
     const { data, error } = await client.from("investigations").select("id,name,slug,status,description,incident_date,confidence,timeline_confidence,requires_review,created_at,updated_at").order("updated_at", { ascending: false });
     if (error) throw new Error(message(error));
-    return await Promise.all((data ?? []).map(async (r) => {
-      const [ev, events, cons, uns] = await Promise.all([
+
+    return Promise.all((data ?? []).map(async (r) => {
+      const [ev, events, cons, uns] = await Promise.allSettled([
         client.from("evidence").select("id", { count: "exact", head: true }).eq("investigation_id", r.id),
         client.from("timeline_events").select("id", { count: "exact", head: true }).eq("investigation_id", r.id),
         client.from("contradictions").select("id", { count: "exact", head: true }).eq("investigation_id", r.id),
         client.from("unknowns").select("id", { count: "exact", head: true }).eq("investigation_id", r.id),
       ]);
+
+      const countOf = (result: PromiseSettledResult<{ count?: number | null }>) =>
+        result.status === "fulfilled" ? (result.value.count ?? 0) : 0;
+
       return {
         id: r.id,
         slug: r.slug ?? r.id,
@@ -59,10 +64,10 @@ export const investigationService = {
         updatedLabel: relative(r.updated_at),
         incidentDate: r.incident_date ?? "—",
         description: r.description ?? "",
-        evidenceCount: ev.count ?? 0,
-        eventCount: events.count ?? 0,
-        contradictionCount: cons.count ?? 0,
-        unknownCount: uns.count ?? 0,
+        evidenceCount: countOf(ev),
+        eventCount: countOf(events),
+        contradictionCount: countOf(cons),
+        unknownCount: countOf(uns),
         confidence: Number(r.confidence ?? 0),
         coverage: { verified: 0, uncertain: 0, missing: 0 },
         timelineConfidence: Number(r.timeline_confidence ?? 0),
