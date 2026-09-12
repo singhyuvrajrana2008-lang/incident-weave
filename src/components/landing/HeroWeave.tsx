@@ -1,60 +1,64 @@
-import { motion } from "motion/react";
-import { FileText, Image, MessageSquare, Phone, Mic } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowRight, FileText, Image, Mic2 } from "lucide-react";
 
-const fragments = [
-  { Icon: Image, label: "Screenshot", tone: "#60a5fa" },
-  { Icon: Phone, label: "Call Log", tone: "#38bdf8" },
-  { Icon: FileText, label: "PDF", tone: "#f05252" },
-  { Icon: MessageSquare, label: "Message", tone: "#22d3ee" },
-  { Icon: Mic, label: "Recording", tone: "#34d399" },
+const sources = [
+  { icon: FileText, label: "Witness statement", color: "#39a6ff", position: "top-[9%] left-[5%]" },
+  { icon: Image, label: "CCTV frame", color: "#6f8cff", position: "top-[43%] left-[0%]" },
+  { icon: Mic2, label: "Call transcript", color: "#31d3cf", position: "bottom-[10%] left-[8%]" },
 ];
 
-const events = ["10:12", "10:14", "10:16", "10:18", "10:21"];
+const outcomes = [
+  { label: "Timeline", color: "#39a6ff", position: "top-[8%] right-[1%]" },
+  { label: "Contradictions", color: "#ff6379", position: "top-[44%] right-[0%]" },
+  { label: "Unknowns", color: "#f7b84b", position: "bottom-[10%] right-[4%]" },
+];
 
 export function HeroWeave() {
+  const [active, setActive] = useState<string | null>(null);
+  const lines = useMemo(() => sources.map((_, i) => i), []);
+
   return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
-      <svg viewBox="0 0 600 420" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        {fragments.map((f, i) => (
-          <motion.path
-            key={f.label}
-            d={`M90 ${65 + i * 66} C210 ${65 + i * 66}, 245 210, 300 210`}
-            fill="none" stroke={f.tone} strokeWidth="1.5" strokeOpacity=".5"
-            initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: .55 }}
-            transition={{ duration: .9, delay: i * .12 }}
-          />
+    <div className="relative mx-auto h-full min-h-[390px] w-full max-w-[630px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_45%,rgba(57,166,255,.13),transparent_30%),linear-gradient(180deg,#0c1726,#08111c)] shadow-[0_30px_100px_rgba(0,0,0,.3)]">
+      <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="absolute left-5 top-5 z-10 rounded-full border border-white/8 bg-black/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[.16em] text-[#667b94]">Evidence weave</div>
+
+      <div className="absolute left-[42%] top-[39%] z-20 -translate-x-1/2 -translate-y-1/2 sm:left-1/2">
+        <div className="grid size-24 place-items-center rounded-full border border-[#39a6ff]/40 bg-[#0b1b2e] shadow-[0_0_0_10px_rgba(57,166,255,.05),0_0_55px_rgba(57,166,255,.18)]">
+          <div className="grid size-14 place-items-center rounded-2xl border border-[#39a6ff]/30 bg-[#39a6ff]/10 text-[#55b6ff]">
+            <ArrowRight className="size-6" />
+          </div>
+        </div>
+        <div className="mt-3 text-center font-mono text-[10px] uppercase tracking-wider text-[#70839a]">Correlation engine</div>
+      </div>
+
+      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 630 500" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        {lines.map((i) => (
+          <path key={i} d={i === 0 ? "M92 88 C185 86 220 142 315 205" : i === 1 ? "M58 250 C178 250 219 236 315 235" : "M115 414 C190 393 228 325 315 270"} stroke={sources[i].color} strokeOpacity=".34" strokeWidth="2" strokeDasharray="5 7" />
         ))}
-        {events.map((_, i) => (
-          <motion.path key={i} d={`M300 210 C380 210, 420 ${55 + i * 72}, 505 ${55 + i * 72}`}
-            fill="none" stroke={i === 3 ? "#f05252" : i === 4 ? "#fbbf24" : "#38bdf8"}
-            strokeWidth={i === 3 ? 2 : 1.5} strokeOpacity=".55" strokeDasharray={i === 3 ? "5 5" : undefined}
-            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: .8, delay: .8 + i * .18 }} />
+        {outcomes.map((_, i) => (
+          <path key={i} d={i === 0 ? "M315 205 C410 150 448 103 556 85" : i === 1 ? "M315 235 C408 232 475 242 568 249" : "M315 270 C415 307 449 365 548 405"} stroke={outcomes[i].color} strokeOpacity=".28" strokeWidth="2" strokeDasharray="5 7" />
         ))}
-        <circle cx="300" cy="210" r="24" fill="#0b0f14" stroke="#38bdf8" strokeWidth="2" />
-        <motion.circle cx="300" cy="210" r="8" fill="#38bdf8" animate={{ opacity: [.35,1,.35], r:[7,10,7] }} transition={{ duration:2.2, repeat:Infinity }} />
       </svg>
-      <div className="absolute left-5 top-5 flex flex-col gap-2">
-        {fragments.map(({ Icon, label, tone }, i) => (
-          <motion.div key={label} className="flex items-center gap-2 rounded-md border border-line-2 bg-surface/90 px-3 py-2 backdrop-blur"
-            initial={{ opacity:0,x:-12 }} animate={{ opacity:1,x:0 }} transition={{ delay:i*.1 }}>
-            <Icon className="size-3.5" style={{ color:tone }} />
-            <span className="font-mono text-[10px] text-fg-muted">{label}</span>
-          </motion.div>
-        ))}
+
+      {sources.map(({ icon: Icon, label, color, position }) => (
+        <button key={label} onClick={() => setActive(active === label ? null : label)} className={`absolute ${position} z-20 flex max-w-[170px] items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition ${active === label ? "border-white/25 bg-white/10" : "border-white/8 bg-[#0b1624]/90 hover:border-white/16"}`} style={{ boxShadow: active === label ? `0 0 24px ${color}25` : undefined }}>
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl" style={{ background: `${color}17`, color }}><Icon className="size-4" /></span>
+          <span className="min-w-0"><span className="block truncate text-[11px] font-medium text-white">{label}</span><span className="mt-0.5 block font-mono text-[9px] text-[#61758d]">source evidence</span></span>
+        </button>
+      ))}
+
+      {outcomes.map(({ label, color, position }) => (
+        <button key={label} onClick={() => setActive(active === label ? null : label)} className={`absolute ${position} z-20 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition ${active === label ? "border-white/25 bg-white/10" : "border-white/8 bg-[#0b1624]/90 hover:border-white/16"}`}>
+          <span className="size-2 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+          <span className="text-[11px] font-medium text-white">{label}</span>
+        </button>
+      ))}
+
+      <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/8 bg-black/25 px-3 py-2 text-[10px] text-[#768aa1] backdrop-blur">
+        <span className="size-1.5 rounded-full bg-[#35d49a]" />
+        AI-assisted · Human reviewed
+        <ArrowDown className="size-3" />
       </div>
-      <div className="absolute right-5 top-8 flex flex-col gap-3">
-        {events.map((time, i) => (
-          <motion.div key={time} className="flex items-center gap-2 rounded-md border px-3 py-2 bg-surface/80"
-            style={{ borderColor: i===3 ? "#f0525244" : i===4 ? "#fbbf2444" : "#38bdf844" }}
-            initial={{ opacity:0,x:12 }} animate={{ opacity:1,x:0 }} transition={{ delay:.9+i*.18 }}>
-            <span className="size-1.5 rounded-full" style={{ background: i===3 ? "#f05252" : i===4 ? "#fbbf24" : "#38bdf8" }} />
-            <span className="font-mono text-[10px]" style={{ color: i===3 ? "#f05252" : i===4 ? "#fbbf24" : "#38bdf8" }}>{time}</span>
-            {i===3 && <span className="font-mono text-[9px] text-crimson">conflict</span>}
-            {i===4 && <span className="font-mono text-[9px] text-amber">unknown</span>}
-          </motion.div>
-        ))}
-      </div>
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-8 font-mono text-[10px] uppercase tracking-[.25em] text-accent">Correlation</div>
     </div>
   );
 }
