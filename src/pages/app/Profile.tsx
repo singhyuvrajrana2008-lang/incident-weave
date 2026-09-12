@@ -1,0 +1,5 @@
+import { useState } from "react";
+import { useApp } from "../../store/AppContext";
+import { Page } from "../../components/shell/Page";
+import { Button, Field, Input } from "../../components/ui";
+export default function Profile(){const {session,updateProfile,toast}=useApp();const [name,setName]=useState(session?.name??"");return <Page eyebrow="Account" title="Profile" subtitle="Identity shown in the investigation workspace."><div className="max-w-xl rounded-lg border border-line bg-surface p-6"><Field label="Display name"><Input value={name} onChange={e=>setName(e.target.value)}/></Field><div className="mt-5 grid gap-4 md:grid-cols-2"><div><div className="font-mono text-[10px] uppercase text-fg-faint">Email</div><div className="mt-1 text-sm">{session?.email}</div></div><div><div className="font-mono text-[10px] uppercase text-fg-faint">Role</div><div className="mt-1 text-sm">{session?.role}</div></div></div><Button className="mt-6" onClick={()=>{updateProfile({name});toast({kind:"success",title:"Profile saved"})}}>Save changes</Button></div></Page>}
