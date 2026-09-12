@@ -1,0 +1,19 @@
+import type { ReactNode } from "react";
+import { cn } from "../../lib/cn";
+
+export function Page({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn("mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8", className)}>{children}</div>;
+}
+
+export function PageHeader({ title, subtitle, actions, eyebrow }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; eyebrow?: string }) {
+  return (
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div>
+        {eyebrow && <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">{eyebrow}</p>}
+        <h1 className="font-display text-2xl font-bold tracking-tight text-fg">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-fg-dim">{subtitle}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
+  );
+}

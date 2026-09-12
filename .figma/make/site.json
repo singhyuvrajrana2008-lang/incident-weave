@@ -1,0 +1,10 @@
+{
+  "description": "Streamline incident management with a comprehensive frontend that offers intuitive dashboards, investigation workflows, and real-time notifications for efficient response.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
