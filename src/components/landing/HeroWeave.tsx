@@ -1,116 +1,63 @@
-import { motion } from "motion/react";
-import { Image, FileText, Phone, MessageSquare, Mic } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowRight, FileText, Image, Mic2 } from "lucide-react";
 
-/**
- * Interactive evidence-correlation hero visual.
- * Fragments on the left stream into a central correlation node, which emits
- * a reconstructed timeline. One relationship reads crimson (contradiction),
- * one node reads amber (unknown).
- */
-const fragments = [
-  { icon: Image, label: "Screenshot", color: "#60a5fa", y: 8 },
-  { icon: Phone, label: "Call Log", color: "#38bdf8", y: 30 },
-  { icon: FileText, label: "PDF", color: "#f05252", y: 52 },
-  { icon: MessageSquare, label: "Message", color: "#22d3ee", y: 74 },
-  { icon: Mic, label: "Recording", color: "#34d399", y: 96 },
+const sources = [
+  { icon: FileText, label: "Witness statement", color: "#39a6ff", position: "top-[9%] left-[5%]" },
+  { icon: Image, label: "CCTV frame", color: "#6f8cff", position: "top-[43%] left-[0%]" },
+  { icon: Mic2, label: "Call transcript", color: "#31d3cf", position: "bottom-[10%] left-[8%]" },
 ];
 
-const timelineNodes = [
-  { t: "10:12", tone: "#34d399", delay: 1.0 },
-  { t: "10:14", tone: "#38bdf8", delay: 1.25 },
-  { t: "10:16", tone: "#34d399", delay: 1.5 },
-  { t: "10:18", tone: "#f05252", delay: 1.75 },
-  { t: "10:21", tone: "#fbbf24", delay: 2.0 },
+const outcomes = [
+  { label: "Timeline", color: "#39a6ff", position: "top-[8%] right-[1%]" },
+  { label: "Contradictions", color: "#ff6379", position: "top-[44%] right-[0%]" },
+  { label: "Unknowns", color: "#f7b84b", position: "bottom-[10%] right-[4%]" },
 ];
 
 export function HeroWeave() {
-  return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
-      <div className="absolute inset-0 bg-[radial-gradient(500px_300px_at_60%_40%,rgba(56,189,248,0.08),transparent_70%)]" />
-      <svg viewBox="0 0 400 300" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet">
-        {/* strands from fragments to correlation node */}
-        {fragments.map((f, i) => (
-          <motion.path
-            key={i}
-            d={`M 70 ${20 + f.y * 0.7} C 140 ${20 + f.y * 0.7}, 150 150, 200 150`}
-            fill="none"
-            stroke={f.color}
-            strokeWidth={1.2}
-            strokeOpacity={0.5}
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ duration: 0.9, delay: 0.2 + i * 0.12, ease: "easeOut" }}
-          />
-        ))}
-        {/* strands from correlation node to timeline */}
-        {timelineNodes.map((n, i) => (
-          <motion.path
-            key={i}
-            d={`M 200 150 C 250 150, 260 ${50 + i * 50}, 320 ${50 + i * 50}`}
-            fill="none"
-            stroke={n.tone}
-            strokeWidth={n.tone === "#f05252" ? 1.6 : 1.2}
-            strokeOpacity={0.55}
-            className={n.tone === "#f05252" ? "weave-line animate-dash" : ""}
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.55 }}
-            transition={{ duration: 0.8, delay: n.delay, ease: "easeOut" }}
-          />
-        ))}
-        {/* central correlation node */}
-        <motion.circle cx="200" cy="150" r="16" fill="#0b0f14" stroke="#38bdf8" strokeWidth="1.5"
-          initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.7, duration: 0.5 }} style={{ transformOrigin: "200px 150px" }} />
-        <motion.circle cx="200" cy="150" r="6" fill="#38bdf8"
-          animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2.4, repeat: Infinity }} />
-      </svg>
+  const [active, setActive] = useState<string | null>(null);
+  const lines = useMemo(() => sources.map((_, i) => i), []);
 
-      {/* Fragment cards */}
-      <div className="absolute left-3 top-4 flex flex-col gap-2 sm:left-5 sm:gap-2.5">
-        {fragments.map((f, i) => (
-          <motion.div
-            key={f.label}
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0, y: [0, -2, 0] }}
-            transition={{
-              opacity: { delay: i * 0.1, duration: 0.4 },
-              x: { delay: i * 0.1, duration: 0.4 },
-              y: { delay: 1 + i * 0.2, duration: 3 + i * 0.4, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="flex items-center gap-2 rounded-sm border border-line-2 bg-surface/90 px-2.5 py-1.5 backdrop-blur-sm"
-          >
-            <f.icon className="size-3.5" style={{ color: f.color }} />
-            <span className="font-mono text-[10px] text-fg-muted">{f.label}</span>
-          </motion.div>
-        ))}
+  return (
+    <div className="relative mx-auto h-full min-h-[390px] w-full max-w-[630px] overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_45%,rgba(57,166,255,.13),transparent_30%),linear-gradient(180deg,#0c1726,#08111c)] shadow-[0_30px_100px_rgba(0,0,0,.3)]">
+      <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="absolute left-5 top-5 z-10 rounded-full border border-white/8 bg-black/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[.16em] text-[#667b94]">Evidence weave</div>
+
+      <div className="absolute left-[42%] top-[39%] z-20 -translate-x-1/2 -translate-y-1/2 sm:left-1/2">
+        <div className="grid size-24 place-items-center rounded-full border border-[#39a6ff]/40 bg-[#0b1b2e] shadow-[0_0_0_10px_rgba(57,166,255,.05),0_0_55px_rgba(57,166,255,.18)]">
+          <div className="grid size-14 place-items-center rounded-2xl border border-[#39a6ff]/30 bg-[#39a6ff]/10 text-[#55b6ff]">
+            <ArrowRight className="size-6" />
+          </div>
+        </div>
+        <div className="mt-3 text-center font-mono text-[10px] uppercase tracking-wider text-[#70839a]">Correlation engine</div>
       </div>
 
-      {/* Correlation label */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-        className="absolute left-1/2 top-[42%] -translate-x-1/2 translate-y-8 whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-accent"
-      >
-        Correlation
-      </motion.div>
-
-      {/* Timeline node chips */}
-      <div className="absolute right-3 top-6 flex flex-col gap-3 sm:right-5">
-        {timelineNodes.map((n, i) => (
-          <motion.div
-            key={n.t}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: n.delay + 0.2, duration: 0.4 }}
-            className="flex items-center gap-2 rounded-sm border px-2.5 py-1.5"
-            style={{ borderColor: `${n.tone}44`, background: `${n.tone}12` }}
-          >
-            <span className="size-1.5 rounded-full" style={{ background: n.tone }} />
-            <span className="font-mono text-[10px]" style={{ color: n.tone }}>{n.t}</span>
-            {n.tone === "#f05252" && <span className="font-mono text-[9px] text-crimson">conflict</span>}
-            {n.tone === "#fbbf24" && <span className="font-mono text-[9px] text-amber">unknown</span>}
-          </motion.div>
+      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 630 500" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        {lines.map((i) => (
+          <path key={i} d={i === 0 ? "M92 88 C185 86 220 142 315 205" : i === 1 ? "M58 250 C178 250 219 236 315 235" : "M115 414 C190 393 228 325 315 270"} stroke={sources[i].color} strokeOpacity=".34" strokeWidth="2" strokeDasharray="5 7" />
         ))}
+        {outcomes.map((_, i) => (
+          <path key={i} d={i === 0 ? "M315 205 C410 150 448 103 556 85" : i === 1 ? "M315 235 C408 232 475 242 568 249" : "M315 270 C415 307 449 365 548 405"} stroke={outcomes[i].color} strokeOpacity=".28" strokeWidth="2" strokeDasharray="5 7" />
+        ))}
+      </svg>
+
+      {sources.map(({ icon: Icon, label, color, position }) => (
+        <button key={label} onClick={() => setActive(active === label ? null : label)} className={`absolute ${position} z-20 flex max-w-[170px] items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition ${active === label ? "border-white/25 bg-white/10" : "border-white/8 bg-[#0b1624]/90 hover:border-white/16"}`} style={{ boxShadow: active === label ? `0 0 24px ${color}25` : undefined }}>
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl" style={{ background: `${color}17`, color }}><Icon className="size-4" /></span>
+          <span className="min-w-0"><span className="block truncate text-[11px] font-medium text-white">{label}</span><span className="mt-0.5 block font-mono text-[9px] text-[#61758d]">source evidence</span></span>
+        </button>
+      ))}
+
+      {outcomes.map(({ label, color, position }) => (
+        <button key={label} onClick={() => setActive(active === label ? null : label)} className={`absolute ${position} z-20 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition ${active === label ? "border-white/25 bg-white/10" : "border-white/8 bg-[#0b1624]/90 hover:border-white/16"}`}>
+          <span className="size-2 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+          <span className="text-[11px] font-medium text-white">{label}</span>
+        </button>
+      ))}
+
+      <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/8 bg-black/25 px-3 py-2 text-[10px] text-[#768aa1] backdrop-blur">
+        <span className="size-1.5 rounded-full bg-[#35d49a]" />
+        AI-assisted · Human reviewed
+        <ArrowDown className="size-3" />
       </div>
     </div>
   );
