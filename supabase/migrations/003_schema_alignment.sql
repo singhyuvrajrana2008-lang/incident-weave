@@ -1,5 +1,5 @@
 -- Align the database contract with the frontend and Edge Function.
--- Safe for both fresh databases and the partially initialized deployment.
+-- Safe for fresh databases and the partially initialized deployment.
 
 alter table public.investigations
   add column if not exists slug text;
@@ -14,8 +14,8 @@ where slug is null;
 alter table public.investigations
   alter column slug set not null;
 
-create unique index if not exists investigations_slug_key
-  on public.investigations(slug);
+create unique index if not exists investigations_owner_slug_key
+  on public.investigations(owner_id, slug);
 
 alter table public.analysis_runs
   add column if not exists requested_by uuid;
@@ -26,10 +26,20 @@ from public.investigations i
 where ar.investigation_id = i.id
   and ar.requested_by is null;
 
-alter table public.analysis_runs
-  add constraint analysis_runs_requested_by_fkey
-  foreign key (requested_by) references public.profiles(id)
-  not valid;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'analysis_runs_requested_by_fkey'
+      and conrelid = 'public.analysis_runs'::regclass
+  ) then
+    alter table public.analysis_runs
+      add constraint analysis_runs_requested_by_fkey
+      foreign key (requested_by) references public.profiles(id)
+      not valid;
+  end if;
+end $$;
 
 alter table public.analysis_runs
   validate constraint analysis_runs_requested_by_fkey;
