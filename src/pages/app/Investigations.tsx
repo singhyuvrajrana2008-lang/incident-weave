@@ -9,20 +9,20 @@ import { DEMO_INVESTIGATION } from "../../lib/demoInvestigation";
 
 export default function Investigations() {
   const nav = useNavigate();
-  const [data, setData] = useState<Investigation[] | null>(null);
+  const [data, setData] = useState<Investigation[]>([DEMO_INVESTIGATION]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState("updated");
 
   useEffect(() => {
     investigationService.list().then((rows) => {
-      const showDemo = window.localStorage.getItem("incidentweave-demo-seeded") === "1";
-      setData(showDemo ? [DEMO_INVESTIGATION, ...rows.filter((row) => row.id !== DEMO_INVESTIGATION.id)] : rows);
+      setData([DEMO_INVESTIGATION, ...rows.filter((row) => row.id !== DEMO_INVESTIGATION.id)]);
+    }).catch(() => {
+      setData([DEMO_INVESTIGATION]);
     });
   }, []);
 
   const rows = useMemo(() => {
-    if (!data) return [];
     let r = data.filter((i) => (status === "all" || i.status === status) && i.name.toLowerCase().includes(q.toLowerCase()));
     r = [...r].sort((a, b) => (sort === "confidence" ? b.confidence - a.confidence : sort === "evidence" ? b.evidenceCount - a.evidenceCount : 0));
     return r;
