@@ -59,11 +59,9 @@ IncidentWeave is designed as a human-in-the-loop system. AI findings should rema
 6. IncidentWeave presents the timeline, contradictions, unknowns, confidence and source relationships.
 7. The investigator reviews and makes the final decision.
 
-## Project status
+## Analysis reliability
 
-This repository is intentionally being reset as a clean starting point for the next implementation phase.
-
-The completed frontend is being maintained separately as the UI source of truth. The backend will be rebuilt cleanly around that frontend using Supabase and Gemini.
+The `analyze-evidence` Edge Function sends actual evidence content to Gemini and treats HTTP 429, 500, 502, 503, and 504 responses as transient. Each request is retried with exponential backoff and jitter, has a 90-second timeout, and can fall back from `GEMINI_MODEL` to `GEMINI_FALLBACK_MODEL` (default `gemini-2.5-flash`). Configure both server-side secrets when deploying the function. A persistent analysis run is marked failed only after the configured models and retries are exhausted.
 
 ## Security principles
 
