@@ -82,3 +82,18 @@ Category: **Software / AI / Open Innovation**
 ## License / demo data
 
 Any future demo evidence should be synthetic or openly licensed and clearly identified as such.
+
+## Local configuration and deployment
+
+Copy `.env.example` to `.env` and set `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY`. Apply the SQL migrations in `supabase/migrations` to
+your Supabase project, deploy `supabase/functions/analyze-evidence`, and set
+its server-side secrets: `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), and
+`GEMINI_FALLBACK_MODEL` (optional). Do **not** put a Gemini key in a `VITE_*`
+variable or commit it to the repository.
+
+The browser uploads evidence to the private `evidence` bucket, then invokes the
+Edge Function using the authenticated user's JWT. The function checks the
+investigation and analysis-run owner before using its service role to download
+evidence and call Gemini. If Gemini or a dependency fails, the analysis run is
+persisted as failed and no replacement or mock findings are generated.
