@@ -41,6 +41,13 @@ const ACCEPTED_TYPES = new Set([
 ])
 const ACCEPTED_EXTENSIONS =
   /\.(png|jpe?g|webp|gif|pdf|txt|md|mp3|wav|m4a|webm)$/i
+const MIME_BY_EXTENSION: Record<string, string> = {
+  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", pdf: "application/pdf", txt: "text/plain", md: "text/markdown", mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", webm: "audio/webm",
+}
+const hasSupportedMimeContract = (file: File) => {
+  const expected = MIME_BY_EXTENSION[file.name.split(".").pop()?.toLowerCase() ?? ""]
+  return !!expected && ACCEPTED_EXTENSIONS.test(file.name) && (!file.type || file.type === expected || (expected === "audio/wav" && file.type === "audio/x-wav") || (expected === "image/jpeg" && file.type === "image/jpg"))
+}
 
 type QueuedFile = { id: string; file: File; type: EvidenceType }
 
@@ -77,8 +84,8 @@ export default function NewInvestigation() {
         if (
           file.size === 0 ||
           file.size > MAX_FILE_SIZE ||
-          (!ACCEPTED_TYPES.has(file.type) &&
-            !ACCEPTED_EXTENSIONS.test(file.name))
+          !ACCEPTED_TYPES.has(file.type || MIME_BY_EXTENSION[file.name.split(".").pop()?.toLowerCase() ?? ""]) ||
+          !hasSupportedMimeContract(file)
         ) {
           rejected.push(file.name)
         } else {
@@ -175,6 +182,10 @@ export default function NewInvestigation() {
           onComplete={() =>
             nav(`/app/investigations/${investigationId}`, { replace: true })
           }
+          onRetry={() => {
+            setAnalysisRunId(null)
+            setStep("review")
+          }}
         />
       </Page>
     )
