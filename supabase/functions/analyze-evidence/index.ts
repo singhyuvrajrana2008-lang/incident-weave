@@ -393,14 +393,22 @@ async function main(req: Request) {
     const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":"","title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions":[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. Preserve approximate timestamps instead of inventing precision. Sort timeline chronologically where possible.`
 
     await updateRun({ stage: stages[3], progress: 42 })
-    const primaryModel = Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash"
+    const primaryModel =
+      (Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash").trim()
     const fallbackModel =
-      Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash"
+      (Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash").trim()
+    const secondaryFallbackModel =
+      (Deno.env.get("GEMINI_SECONDARY_FALLBACK_MODEL") || "gemini-2.5-flash")
+        .trim()
     stage = "gemini_request"
-    const payload = await geminiRequest(key, [primaryModel, fallbackModel], [
-      { text: instruction },
-      ...evidenceParts,
-    ])
+    const payload = await geminiRequest(
+      key,
+      [primaryModel, fallbackModel, secondaryFallbackModel],
+      [
+        { text: instruction },
+        ...evidenceParts,
+      ],
+    )
     stage = "gemini_response"
     const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text
     if (typeof text !== "string")
