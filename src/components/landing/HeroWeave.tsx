@@ -89,7 +89,7 @@ export function HeroWeave() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
-        className="absolute left-1/2 top-[42%] -translate-x-1/2 translate-y-8 whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-accent"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-[22px] whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-accent"
       >
         Correlation
       </motion.div>
