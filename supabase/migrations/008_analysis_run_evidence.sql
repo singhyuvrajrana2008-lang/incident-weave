@@ -1,4 +1,4 @@
--- Record the immutable evidence set for each analysis run.  This makes the
+-- Record the immutable evidence set for each analysis run. This makes the
 -- Edge Function's evidence-reference validation auditable and prevents a run
 -- from being re-used with a different selection.
 create table if not exists public.analysis_run_evidence (
