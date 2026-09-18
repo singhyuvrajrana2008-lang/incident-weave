@@ -45,6 +45,16 @@ const allowedMimeTypes = new Set([
 ])
 const maxEvidenceCount = 20
 const maxTotalBytes = 30 * 1024 * 1024
+const retiredGeminiModels = new Set(["gemini-2.5-flash"])
+
+function configuredModel(secretName: string, fallback: string) {
+  const value = (Deno.env.get(secretName) || fallback).trim()
+  if (retiredGeminiModels.has(value)) {
+    console.error(JSON.stringify({ stage: "model_configuration", secretName, configuredModel: value, selectedModel: fallback, reason: "retired_model" }))
+    return fallback
+  }
+  return value
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -393,13 +403,9 @@ async function main(req: Request) {
     const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":"","title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions":[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. Preserve approximate timestamps instead of inventing precision. Sort timeline chronologically where possible.`
 
     await updateRun({ stage: stages[3], progress: 42 })
-    const primaryModel =
-      (Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash").trim()
-    const fallbackModel =
-      (Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash").trim()
-    const secondaryFallbackModel =
-      (Deno.env.get("GEMINI_SECONDARY_FALLBACK_MODEL") || "gemini-3.1-flash-lite")
-        .trim()
+    const primaryModel = configuredModel("GEMINI_MODEL", "gemini-3.8-flash")
+    const fallbackModel = configuredModel("GEMINI_FALLBACK_MODEL", "gemini-3.6-flash")
+    const secondaryFallbackModel = configuredModel("GEMINI_SECONDARY_FALLBACK_MODEL", "gemini-3.1-flash-lite")
     stage = "gemini_request"
     const payload = await geminiRequest(
       key,
