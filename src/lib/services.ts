@@ -68,7 +68,6 @@ const mimeForFile = (file: File) => {
   if (!inferred || (file.type && file.type !== inferred && !(inferred === "image/jpeg" && file.type === "image/jpg") && !(inferred === "audio/wav" && file.type === "audio/x-wav"))) return null
   return file.type === "image/jpg" ? "image/jpeg" : file.type || inferred
 }
-
 type FunctionFailure = {
   error?: string
   stage?: string
