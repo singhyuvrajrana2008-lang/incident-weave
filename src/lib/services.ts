@@ -54,6 +54,20 @@ const message = (error: unknown) =>
   error instanceof Error
     ? error.message
     : "Something went wrong. Please try again."
+const supportedMimeTypes = new Set([
+  "image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf",
+  "text/plain", "text/markdown", "audio/mpeg", "audio/wav", "audio/x-wav",
+  "audio/mp4", "audio/webm",
+])
+const extensionMime: Record<string, string> = {
+  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", pdf: "application/pdf", txt: "text/plain", md: "text/markdown", mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", webm: "audio/webm",
+}
+const mimeForFile = (file: File) => {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? ""
+  const inferred = extensionMime[extension]
+  if (!inferred || (file.type && file.type !== inferred && !(inferred === "image/jpeg" && file.type === "image/jpg") && !(inferred === "audio/wav" && file.type === "audio/x-wav"))) return null
+  return file.type === "image/jpg" ? "image/jpeg" : file.type || inferred
+}
 
 export const authService = {
   async current(): Promise<Session | null> {
@@ -159,7 +173,10 @@ function toEvent(row: Record<string, unknown>): TimelineEvent {
     sources: Array.isArray(row.evidence_ids)
       ? row.evidence_ids as string[]
       : [],
-    label: row.basis as TimelineEvent["label"] ?? "uncertain",
+    label:
+      row.basis === "observed"
+        ? "evidence-backed"
+        : row.basis as TimelineEvent["label"] ?? "uncertain",
   }
 }
 function toContradiction(row: Record<string, unknown>): Contradiction {
@@ -200,8 +217,8 @@ async function audit(
 ) {
   const client = requireSupabase()
   const user = (await client.auth.getUser()).data.user
-  if (user)
-    await client
+  if (user) {
+    const { error } = await client
       .from("audit_log")
       .insert({
         user_id: user.id,
@@ -209,6 +226,8 @@ async function audit(
         action,
         metadata,
       })
+    if (error) throw new Error(message(error))
+  }
 }
 
 export const investigationService = {
@@ -368,7 +387,7 @@ export const investigationService = {
       .single()
     if (error) throw new Error(message(error))
     await audit("investigation_created", data.id)
-    await client
+    const notification = await client
       .from("notifications")
       .insert({
         user_id: user.id,
@@ -377,6 +396,7 @@ export const investigationService = {
         body: input.name,
         kind: "info",
       })
+    if (notification.error) throw new Error(message(notification.error))
     return data.id as string
   },
   async uploadEvidence(investigationId: string, files: File[]) {
@@ -385,12 +405,15 @@ export const investigationService = {
     if (!user)
       throw new Error("Your session has expired. Please sign in again.")
     if (!files.length) throw new Error("Select at least one evidence file.")
-    const uploaded: string[] = []
-    for (const file of files) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(investigationId)) throw new Error("Invalid investigation ID.")
+    const uploaded: Array<{ id: string; path: string }> = []
+    try { for (const file of files) {
       if (!file.name || file.size <= 0 || file.size > 15 * 1024 * 1024)
         throw new Error(
           `${file.name || "Evidence"} must be between 1 byte and 15 MB.`,
         )
+      const mimeType = mimeForFile(file)
+      if (!mimeType || !supportedMimeTypes.has(mimeType)) throw new Error(`${file.name || "Evidence"} has an unsupported or mismatched file type.`)
       const id = crypto.randomUUID()
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_")
       const path = `${user.id}/${investigationId}/${id}/${safeName}`
@@ -398,7 +421,7 @@ export const investigationService = {
         .from("evidence")
         .upload(path, file, {
           upsert: false,
-          contentType: file.type || undefined,
+          contentType: mimeType,
         })
       if (stored.error) throw new Error(stored.error.message)
       const { error } = await client
@@ -408,22 +431,28 @@ export const investigationService = {
           investigation_id: investigationId,
           uploaded_by: user.id,
           filename: file.name,
-          mime_type: file.type || "application/octet-stream",
+          mime_type: mimeType,
           size_bytes: file.size,
           storage_path: path,
           status: "processing",
         })
       if (error) {
-        await client.storage.from("evidence").remove([path])
+        const cleanup = await client.storage.from("evidence").remove([path])
+        if (cleanup.error) throw new Error(`Evidence metadata failed and storage cleanup failed: ${cleanup.error.message}`)
         throw new Error(error.message)
       }
-      uploaded.push(id)
+      uploaded.push({ id, path })
+    } } catch (reason) {
+      const ids = uploaded.map((item) => item.id); const paths = uploaded.map((item) => item.path)
+      const [recordCleanup, storageCleanup] = await Promise.all([ids.length ? client.from("evidence").delete().in("id", ids) : Promise.resolve({ error: null }), paths.length ? client.storage.from("evidence").remove(paths) : Promise.resolve({ error: null })])
+      if (recordCleanup.error || storageCleanup.error) throw new Error(`Upload failed and cleanup was incomplete. ${message(reason)}`)
+      throw reason
     }
     await audit("evidence_uploaded", investigationId, {
-      evidenceIds: uploaded,
+      evidenceIds: uploaded.map((item) => item.id),
       count: uploaded.length,
     })
-    return uploaded
+    return uploaded.map((item) => item.id)
   },
   async startAnalysis(investigationId: string, evidenceIds: string[]) {
     const client = requireSupabase()
@@ -432,57 +461,39 @@ export const investigationService = {
       throw new Error("Your session has expired. Please sign in again.")
     if (!evidenceIds.length)
       throw new Error("Select evidence before starting analysis.")
-    const active = await client
-      .from("analysis_runs")
-      .select("id")
-      .eq("investigation_id", investigationId)
-      .in("status", ["queued", "processing"])
-      .maybeSingle()
-    if (active.data) throw new Error("Analysis already in progress.")
-    const { data, error } = await client
-      .from("analysis_runs")
-      .insert({
-        investigation_id: investigationId,
-        requested_by: user.id,
-        status: "queued",
-        stage: "01 Ingesting evidence",
-        progress: 0,
-      })
-      .select("id")
-      .single()
+    if (new Set(evidenceIds).size !== evidenceIds.length) throw new Error("Duplicate evidence cannot be analyzed.")
+    const { data, error } = await client.rpc("start_analysis_run", { inv: investigationId })
     if (error)
       throw new Error(
         error.code === "23505"
           ? "Analysis already in progress."
           : error.message,
       )
-    const update = await client
-      .from("investigations")
-      .update({ status: "analyzing", updated_at: new Date().toISOString() })
-      .eq("id", investigationId)
-    if (update.error) throw new Error(update.error.message)
-    await audit("analysis_started", investigationId, { analysisRunId: data.id })
+    const runId = data as string
+    await audit("analysis_started", investigationId, { analysisRunId: runId })
     try {
       const invoke = await client.functions.invoke<{
         ok?: boolean
         error?: string
       }>("analyze-evidence", {
-        body: { investigationId, analysisRunId: data.id, evidenceIds },
+        body: { investigationId, analysisRunId: runId, evidenceIds },
       })
       if (invoke.error) throw new Error(invoke.error.message)
       if (!invoke.data?.ok)
         throw new Error(invoke.data?.error || "Analysis could not be started.")
-      return data.id as string
+      return runId
     } catch (reason) {
       const diagnostic = message(reason)
-      await client
+      const runFailure = await client
         .from("analysis_runs")
         .update({ status: "failed", error_message: diagnostic, completed_at: new Date().toISOString() })
-        .eq("id", data.id)
-      await client
+        .eq("id", runId)
+      const investigationReset = await client
         .from("investigations")
         .update({ status: "ready", updated_at: new Date().toISOString() })
         .eq("id", investigationId)
+      if (runFailure.error || investigationReset.error)
+        throw new Error(`${diagnostic} The failure state could not be fully recorded; refresh and contact an administrator if it remains analyzing.`)
       throw new Error(diagnostic)
     }
   },
