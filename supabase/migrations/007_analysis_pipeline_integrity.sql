@@ -48,7 +48,7 @@ begin
   from jsonb_to_recordset(contradictions) as x(title text,description text,severity text,confidence text,evidence_ids uuid[],resolution_needed text);
   insert into unknowns (investigation_id,title,description,severity,recommended_evidence,review_status)
   select inv, x.title, x.description, x.severity, x.recommended_evidence, 'open'::public.review_status
-  from jsonb_to_recordset(unknowns) as x(title text,description text,severity text,recommended_evidence jsonb);
+  from jsonb_to_recordset(unknowns) as x(title text,description text,severity text,recommended_evidence text[]);
   needs_review := jsonb_array_length(contradictions) + jsonb_array_length(unknowns);
   update evidence set status = 'ready' where investigation_id = inv;
   update investigations set status = 'complete', confidence = case assessment_confidence when 'high' then 85 when 'low' then 45 else 68 end,
