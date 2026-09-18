@@ -64,6 +64,7 @@ export default function NewInvestigation() {
   const [incidentDate, setIncidentDate] = useState("")
   const [investigationId, setInvestigationId] = useState<string | null>(null)
   const [files, setFiles] = useState<QueuedFile[]>([])
+  const [uploadedEvidenceIds, setUploadedEvidenceIds] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [analysisRunId, setAnalysisRunId] = useState<string | null>(null)
@@ -137,10 +138,13 @@ export default function NewInvestigation() {
     setBusy(true)
     setError("")
     try {
-      const evidenceIds = await investigationService.uploadEvidence(
-        investigationId,
-        files.map(({ file }) => file),
-      )
+      const evidenceIds = uploadedEvidenceIds.length
+        ? uploadedEvidenceIds
+        : await investigationService.uploadEvidence(
+            investigationId,
+            files.map(({ file }) => file),
+          )
+      setUploadedEvidenceIds(evidenceIds)
       const runId = await investigationService.startAnalysis(
         investigationId,
         evidenceIds,
