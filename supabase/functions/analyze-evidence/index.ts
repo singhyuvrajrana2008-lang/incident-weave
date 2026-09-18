@@ -38,11 +38,48 @@ type Result = {
   unknowns: Finding[]
 }
 
+const allowedMimeTypes = new Set([
+  "image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf",
+  "text/plain", "text/markdown", "audio/mpeg", "audio/wav", "audio/x-wav",
+  "audio/mp4", "audio/webm",
+])
+const maxEvidenceCount = 20
+const maxTotalBytes = 30 * 1024 * 1024
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...cors, "Content-Type": "application/json" },
   })
+
+type FailureStage =
+  | "request_validation"
+  | "authorization"
+  | "run_claim"
+  | "evidence_validation"
+  | "evidence_download"
+  | "gemini_request"
+  | "gemini_response"
+  | "result_validation"
+  | "persistence"
+  | "failure_persistence"
+
+const failure = (
+  stage: FailureStage,
+  message: string,
+  analysisRunId?: string,
+  status = 200,
+) =>
+  json(
+    {
+      ok: false,
+      error: "ANALYSIS_FAILED",
+      stage,
+      message,
+      analysisRunId,
+    },
+    status,
+  )
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const uuidPattern =
@@ -52,11 +89,17 @@ function isUuid(value: unknown): value is string {
   return typeof value === "string" && uuidPattern.test(value)
 }
 
-function safeEvidenceIds(values: unknown, allowed: Set<string>) {
-  if (!Array.isArray(values)) return []
-  return values.filter(
-    (value): value is string => isUuid(value) && allowed.has(value),
-  )
+function checkedEvidenceIds(values: unknown, allowed: Set<string>) {
+  if (!Array.isArray(values) || values.length > allowed.size)
+    throw new Error("Gemini returned invalid evidence references.")
+  const ids = values.map((value) => {
+    if (!isUuid(value) || !allowed.has(value))
+      throw new Error("Gemini referenced evidence outside this analysis.")
+    return value
+  })
+  if (new Set(ids).size !== ids.length)
+    throw new Error("Gemini returned duplicate evidence references.")
+  return ids
 }
 
 function safeTimestamp(value: unknown) {
@@ -77,21 +120,28 @@ function assertResult(value: unknown): asserts value is Result {
   ) {
     throw new Error("Gemini response did not match the required schema.")
   }
-  if (!["high", "medium", "low"].includes(v.overallAssessment.confidence)) {
+  if (typeof v.overallAssessment.summary !== "string" || !v.overallAssessment.summary.trim() || v.overallAssessment.summary.length > 5000 || !["high", "medium", "low"].includes(v.overallAssessment.confidence)) {
     throw new Error("Gemini returned an invalid confidence value.")
   }
+  if (v.timeline.length > 100 || v.contradictions.length > 100 || v.unknowns.length > 100)
+    throw new Error("Gemini returned too many findings.")
   for (const group of [v.timeline, v.contradictions, v.unknowns]) {
     for (const item of group) {
       if (
-        !item.id ||
-        !item.title ||
-        !item.description ||
+        typeof item.id !== "string" || !item.id || item.id.length > 100 ||
+        typeof item.title !== "string" || !item.title.trim() || item.title.length > 500 ||
+        typeof item.description !== "string" || !item.description.trim() || item.description.length > 10000 ||
         !["high", "medium", "low"].includes(item.confidence)
       ) {
         throw new Error("Gemini returned an invalid finding.")
       }
     }
   }
+  for (const event of v.timeline) {
+    if (event.timestamp !== undefined && !safeTimestamp(event.timestamp)) throw new Error("Gemini returned an invalid timestamp.")
+    if (event.basis !== undefined && !["observed", "inferred", "ai-observation", "uncertain"].includes(event.basis)) throw new Error("Gemini returned an invalid basis.")
+  }
+  for (const item of [...v.contradictions, ...v.unknowns]) if (item.severity !== undefined && !["low", "medium", "high"].includes(item.severity)) throw new Error("Gemini returned an invalid severity.")
 }
 
 function b64(bytes: Uint8Array) {
@@ -137,9 +187,8 @@ async function geminiRequest(
         if (response.ok) return response.json()
         const detail = await response.text().catch(() => "")
         if (![429, 500, 502, 503, 504].includes(response.status)) {
-          throw new Error(
-            `Gemini request failed (${response.status}) for ${model}: ${detail.slice(0, 500)}`,
-          )
+          console.error(JSON.stringify({ stage: "gemini_request", model, status: response.status, detail: detail.slice(0, 500) }))
+          throw new Error(`Gemini request failed with HTTP ${response.status} for configured model ${model}.`)
         }
       } catch (error) {
         if (
@@ -160,31 +209,37 @@ async function geminiRequest(
   }
 
   throw new Error(
-    `Gemini request failed (${lastStatus}) after retrying configured models.`,
+    `Gemini request failed with HTTP ${lastStatus} after retrying configured models.`,
   )
 }
 
 async function main(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors })
 
-  const { investigationId, analysisRunId, evidenceIds } = await req.json()
+  let requestBody: unknown
+  try {
+    requestBody = await req.json()
+  } catch {
+    return failure("request_validation", "Invalid analysis request.", undefined, 400)
+  }
+  const { investigationId, analysisRunId, evidenceIds } = requestBody as Record<string, unknown>
   if (
-    typeof investigationId !== "string" ||
-    typeof analysisRunId !== "string" ||
-    !Array.isArray(evidenceIds)
+    !isUuid(investigationId) || !isUuid(analysisRunId) || !Array.isArray(evidenceIds) ||
+    !evidenceIds.length || evidenceIds.length > maxEvidenceCount ||
+    evidenceIds.some((id: unknown) => !isUuid(id)) || new Set(evidenceIds).size !== evidenceIds.length
   ) {
-    return json({ error: "Invalid analysis request." }, 400)
+    return failure("request_validation", "Invalid analysis request.", analysisRunId, 400)
   }
 
   const authorization = req.headers.get("Authorization")
   if (!authorization?.startsWith("Bearer "))
-    return json({ error: "Authentication required." }, 401)
+    return failure("authorization", "Authentication required.", analysisRunId, 401)
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")
   if (!supabaseUrl || !serviceRoleKey || !anonKey)
-    return json({ error: "Server Supabase configuration is incomplete." }, 500)
+    return failure("authorization", "Server Supabase configuration is incomplete.", analysisRunId, 500)
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
   const caller = createClient(supabaseUrl, anonKey, {
@@ -192,35 +247,29 @@ async function main(req: Request) {
   })
   const { data: identity, error: identityError } = await caller.auth.getUser()
   if (identityError || !identity.user)
-    return json({ error: "Authentication required." }, 401)
+    return failure("authorization", "Authentication required.", analysisRunId, 401)
 
   const ownership = await supabase
     .from("investigations")
     .select("owner_id")
     .eq("id", investigationId)
     .maybeSingle()
-  if (ownership.error) return json({ error: ownership.error.message }, 500)
+  if (ownership.error) return failure("authorization", "Could not verify investigation access.", analysisRunId, 500)
   if (ownership.data?.owner_id !== identity.user.id)
-    return json({ error: "Investigation access denied." }, 403)
+    return failure("authorization", "Investigation access denied.", analysisRunId, 403)
 
-  if (
-    !isUuid(analysisRunId) ||
-    evidenceIds.some((id: unknown) => !isUuid(id))
-  ) {
-    return json({ error: "Invalid analysis request." }, 400)
-  }
   const run = await supabase
     .from("analysis_runs")
-    .select("id")
+    .select("id,status")
     .eq("id", analysisRunId)
     .eq("investigation_id", investigationId)
     .eq("requested_by", identity.user.id)
     .maybeSingle()
-  if (run.error) return json({ error: "Could not validate analysis run." }, 500)
-  if (!run.data) return json({ error: "Analysis run access denied." }, 403)
+  if (run.error) return failure("authorization", "Could not validate analysis run.", analysisRunId, 500)
+  if (!run.data) return failure("authorization", "Analysis run access denied.", analysisRunId, 403)
 
   const key = Deno.env.get("GEMINI_API_KEY")
-  if (!key) return json({ error: "Server analysis is not configured." }, 500)
+  if (!key) return failure("gemini_request", "Server analysis is not configured.", analysisRunId, 500)
 
   const updateRun = async (patch: Record<string, unknown>) => {
     const { error } = await supabase
@@ -230,15 +279,27 @@ async function main(req: Request) {
     if (error) throw error
   }
 
+  let stage: FailureStage = "run_claim"
   try {
-    await updateRun({
+    if (run.data.status !== "queued")
+      return failure("run_claim", "Analysis run is already active or finished.", analysisRunId, 409)
+    const claim = await supabase
+      .from("analysis_runs")
+      .update({
       status: "processing",
       stage: stages[0],
       progress: 5,
       started_at: new Date().toISOString(),
       error_message: null,
     })
+      .eq("id", analysisRunId)
+      .eq("status", "queued")
+      .select("id")
+      .maybeSingle()
+    if (claim.error) throw claim.error
+    if (!claim.data) return failure("run_claim", "Analysis run is already active or finished.", analysisRunId, 409)
 
+    stage = "evidence_validation"
     const { data: rows, error } = await supabase
       .from("evidence")
       .select("id,filename,mime_type,storage_path,size_bytes")
@@ -247,14 +308,25 @@ async function main(req: Request) {
       .limit(100)
     if (error) throw error
 
-    if (!rows?.length)
+    if (!rows?.length || rows.length !== evidenceIds.length)
       throw new Error("No selected evidence was found for this investigation.")
+
+    const runEvidence = await supabase.from("analysis_run_evidence").insert(
+      evidenceIds.map((evidence_id) => ({ analysis_run_id: analysisRunId, evidence_id })),
+    )
+    if (runEvidence.error) throw new Error(`Could not bind evidence to analysis run: ${runEvidence.error.message}`)
+
+    if (rows.some((row) => !allowedMimeTypes.has(row.mime_type) || !row.storage_path.startsWith(`${identity.user.id}/${investigationId}/${row.id}/`)))
+      throw new Error("Selected evidence has an unsupported type or invalid storage path.")
+    if (rows.reduce((total, row) => total + Number(row.size_bytes), 0) > maxTotalBytes)
+      throw new Error("Selected evidence exceeds the 30 MB analysis limit.")
 
     const metadata: Array<Record<string, unknown>> = []
     const evidenceParts: Array<Record<string, unknown>> = []
     const allowedEvidenceIds = new Set((rows ?? []).map((row) => row.id))
 
     for (const row of rows ?? []) {
+      stage = "evidence_download"
       metadata.push({
         evidenceId: row.id,
         filename: row.filename,
@@ -270,7 +342,7 @@ async function main(req: Request) {
       if (!content.ok)
         throw new Error(`Could not download evidence ${row.filename}.`)
       const bytes = new Uint8Array(await content.arrayBuffer())
-      if (bytes.byteLength > 15 * 1024 * 1024)
+      if (bytes.byteLength !== Number(row.size_bytes) || bytes.byteLength > 15 * 1024 * 1024)
         throw new Error(
           `${row.filename} is too large for inline Gemini analysis.`,
         )
@@ -291,15 +363,15 @@ async function main(req: Request) {
     const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":"","title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions":[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. Preserve approximate timestamps instead of inventing precision. Sort timeline chronologically where possible.`
 
     await updateRun({ stage: stages[3], progress: 42 })
-    // Use a documented generally available model by default. Deployments can
-    // still select a different supported model with GEMINI_MODEL.
-    const primaryModel = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash"
+    const primaryModel = Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash"
     const fallbackModel =
-      Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-2.5-flash"
+      Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash"
+    stage = "gemini_request"
     const payload = await geminiRequest(key, [primaryModel, fallbackModel], [
       { text: instruction },
       ...evidenceParts,
     ])
+    stage = "gemini_response"
     const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text
     if (typeof text !== "string")
       throw new Error("Gemini returned no analysis content.")
@@ -310,151 +382,52 @@ async function main(req: Request) {
     } catch {
       throw new Error("Gemini returned malformed JSON.")
     }
+    stage = "result_validation"
     assertResult(result)
 
     await updateRun({ stage: stages[4], progress: 64 })
 
     const events = result.timeline.map((event) => ({
-      investigation_id: investigationId,
       event_time: safeTimestamp(event.timestamp),
       title: event.title,
       description: event.description,
       confidence: event.confidence,
       basis: event.basis || "uncertain",
-      evidence_ids: safeEvidenceIds(event.evidenceIds, allowedEvidenceIds),
+      evidence_ids: checkedEvidenceIds(event.evidenceIds, allowedEvidenceIds),
     }))
 
     const contradictions = result.contradictions.map((item) => ({
-      investigation_id: investigationId,
       title: item.title,
       description: item.description,
       severity: item.severity || "medium",
       confidence: item.confidence,
-      evidence_ids: safeEvidenceIds(item.evidenceIds, allowedEvidenceIds),
-      resolution_needed:
-        item.resolutionNeeded || "Requires investigator review.",
+      evidence_ids: checkedEvidenceIds(item.evidenceIds, allowedEvidenceIds),
+      resolution_needed: typeof item.resolutionNeeded === "string" ? item.resolutionNeeded.slice(0, 5000) : null,
     }))
 
     const unknowns = result.unknowns.map((item) => ({
-      investigation_id: investigationId,
       title: item.title,
       description: item.description,
       severity: item.severity || "medium",
-      recommended_evidence: item.recommendedEvidence || [],
-      review_status: "open",
+      recommended_evidence: Array.isArray(item.recommendedEvidence) && item.recommendedEvidence.every((value) => typeof value === "string" && value.length <= 1000) ? item.recommendedEvidence : [],
     }))
-
-    for (const table of [
-      "timeline_events",
-      "contradictions",
-      "unknowns",
-    ] as const) {
-      const cleared = await supabase
-        .from(table)
-        .delete()
-        .eq("investigation_id", investigationId)
-      if (cleared.error) throw cleared.error
-    }
-
-    if (events.length) {
-      const timelineInsert = await supabase
-        .from("timeline_events")
-        .insert(events)
-      if (timelineInsert.error)
-        throw new Error(
-          `Could not save timeline: ${timelineInsert.error.message} (${timelineInsert.error.code})`,
-        )
-    }
-
-    if (contradictions.length) {
-      const insert = await supabase
-        .from("contradictions")
-        .insert(contradictions)
-      if (insert.error)
-        throw new Error(
-          `Could not save contradictions: ${insert.error.message} (${insert.error.code})`,
-        )
-    }
-
-    if (unknowns.length) {
-      const insert = await supabase.from("unknowns").insert(unknowns)
-      if (insert.error)
-        throw new Error(
-          `Could not save unknowns: ${insert.error.message} (${insert.error.code})`,
-        )
-    }
-
-    const evidenceUpdate = await supabase
-      .from("evidence")
-      .update({ status: "ready" })
-      .in("id", evidenceIds)
-    if (evidenceUpdate.error) throw evidenceUpdate.error
-
-    const owner = await supabase
-      .from("investigations")
-      .select("owner_id")
-      .eq("id", investigationId)
-      .single()
-    if (owner.error) throw owner.error
-
-    const needsReview = contradictions.length + unknowns.length
-    const investigationUpdate = await supabase
-      .from("investigations")
-      .update({
-        status: "complete",
-        confidence:
-          result.overallAssessment.confidence === "high"
-            ? 85
-            : result.overallAssessment.confidence === "low"
-              ? 45
-              : 68,
-        timeline_confidence: events.length ? 70 : 0,
-        requires_review: needsReview,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", investigationId)
-    if (investigationUpdate.error) throw investigationUpdate.error
-
-    await supabase.from("notifications").insert({
-      user_id: owner.data.owner_id,
-      investigation_id: investigationId,
-      title: "Analysis completed",
-      body: needsReview
-        ? "Review the detected contradictions and unknown evidence."
-        : "The reconstruction is ready for review.",
-      kind: needsReview ? "warn" : "success",
+    for (const item of result.unknowns) checkedEvidenceIds(item.evidenceIds, allowedEvidenceIds)
+    stage = "persistence"
+    const persisted = await supabase.rpc("persist_analysis_results", {
+      run_id: analysisRunId, inv: investigationId, owner: identity.user.id,
+      assessment_confidence: result.overallAssessment.confidence,
+      timeline: events, contradictions, unknowns,
     })
-
-    await supabase.from("audit_log").insert({
-      user_id: owner.data.owner_id,
-      investigation_id: investigationId,
-      action: "analysis_completed",
-      metadata: {
-        analysisRunId,
-        eventCount: events.length,
-        contradictionCount: contradictions.length,
-        unknownCount: unknowns.length,
-      },
-    })
-
-    await updateRun({
-      status: "complete",
-      stage: stages[7],
-      progress: 100,
-      completed_at: new Date().toISOString(),
-    })
+    if (persisted.error) throw new Error(`Could not persist analysis results: ${persisted.error.message}`)
     return json({ ok: true, status: "complete" })
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Analysis failed."
+    console.error(JSON.stringify({ stage, analysisRunId, error: detail }))
 
-    try {
-      await updateRun({
-        status: "failed",
-        error_message: detail,
-        completed_at: new Date().toISOString(),
-      })
-    } catch {
-      // Preserve the original failure when the status update itself cannot be written.
+    try { await updateRun({ status: "failed", error_message: detail, completed_at: new Date().toISOString() }) }
+    catch (statusError) {
+      console.error(JSON.stringify({ stage: "failure_persistence", analysisRunId, error: statusError instanceof Error ? statusError.message : "database error" }))
+      return failure("failure_persistence", "Analysis failed, but the failure status could not be recorded. Refresh and contact an administrator.", analysisRunId, 500)
     }
 
     const owner = await supabase
@@ -462,39 +435,38 @@ async function main(req: Request) {
       .select("owner_id")
       .eq("id", investigationId)
       .maybeSingle()
-    if (owner.data?.owner_id) {
-      await supabase
+    if (owner.error || !owner.data?.owner_id)
+      return failure("failure_persistence", "Analysis failed, but the investigation state could not be restored.", analysisRunId, 500)
+    const investigationReset = await supabase
         .from("investigations")
         .update({ status: "ready", updated_at: new Date().toISOString() })
         .eq("id", investigationId)
-      await supabase.from("notifications").insert({
+    if (investigationReset.error) return failure("failure_persistence", "Analysis failed, but the investigation state could not be restored.", analysisRunId, 500)
+    const notification = await supabase.from("notifications").insert({
         user_id: owner.data.owner_id,
         investigation_id: investigationId,
         title: "Analysis failed",
         body: detail,
         kind: "danger",
       })
-      await supabase.from("audit_log").insert({
+    if (notification.error) return failure("failure_persistence", "Analysis failed, but its failure notification could not be recorded.", analysisRunId, 500)
+    const auditLog = await supabase.from("audit_log").insert({
         user_id: owner.data.owner_id,
         investigation_id: investigationId,
         action: "analysis_failed",
         metadata: { analysisRunId, error: detail },
       })
-    }
+    if (auditLog.error) return failure("failure_persistence", "Analysis failed, but its failure audit entry could not be recorded.", analysisRunId, 500)
 
     // Analysis failures are represented by analysis_runs.status/error_message.
     // Return HTTP 200 so the client does not lose the real diagnostic behind a
     // generic "Edge Function returned a non-2xx status code" error.
-    return json({ ok: false, status: "failed", error: detail })
+    return failure(stage, detail, analysisRunId)
   }
 }
 
 Deno.serve((req) =>
   main(req).catch((error) =>
-    json({
-      ok: false,
-      status: "failed",
-      error: error instanceof Error ? error.message : "Request failed.",
-    }),
+    failure("request_validation", "Request failed before analysis could start.", undefined, 500),
   ),
 )

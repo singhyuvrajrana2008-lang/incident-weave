@@ -61,7 +61,7 @@ IncidentWeave is designed as a human-in-the-loop system. AI findings should rema
 
 ## Analysis reliability
 
-The `analyze-evidence` Edge Function sends actual evidence content to Gemini and treats HTTP 429, 500, 502, 503, and 504 responses as transient. Each request is retried with exponential backoff and jitter, has a 90-second timeout, and can fall back from `GEMINI_MODEL` to `GEMINI_FALLBACK_MODEL` (default `gemini-2.5-flash`). Configure both server-side secrets when deploying the function. A persistent analysis run is marked failed only after the configured models and retries are exhausted.
+The `analyze-evidence` Edge Function sends actual evidence content to Gemini and treats HTTP 429, 500, 502, 503, and 504 responses as transient. Each request is retried with exponential backoff and jitter, has a 90-second timeout, and can fall back from `GEMINI_MODEL` to `GEMINI_FALLBACK_MODEL` (default `gemini-3.8-flash`). Configure both server-side secrets when deploying the function. A persistent analysis run is marked failed only after the configured models and retries are exhausted.
 
 ## Security principles
 
