@@ -52,6 +52,35 @@ const json = (body: unknown, status = 200) =>
     headers: { ...cors, "Content-Type": "application/json" },
   })
 
+type FailureStage =
+  | "request_validation"
+  | "authorization"
+  | "run_claim"
+  | "evidence_validation"
+  | "evidence_download"
+  | "gemini_request"
+  | "gemini_response"
+  | "result_validation"
+  | "persistence"
+  | "failure_persistence"
+
+const failure = (
+  stage: FailureStage,
+  message: string,
+  analysisRunId?: string,
+  status = 200,
+) =>
+  json(
+    {
+      ok: false,
+      error: "ANALYSIS_FAILED",
+      stage,
+      message,
+      analysisRunId,
+    },
+    status,
+  )
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -158,9 +187,8 @@ async function geminiRequest(
         if (response.ok) return response.json()
         const detail = await response.text().catch(() => "")
         if (![429, 500, 502, 503, 504].includes(response.status)) {
-          throw new Error(
-            `Gemini request failed (${response.status}) for ${model}: ${detail.slice(0, 500)}`,
-          )
+          console.error(JSON.stringify({ stage: "gemini_request", model, status: response.status, detail: detail.slice(0, 500) }))
+          throw new Error(`Gemini request failed with HTTP ${response.status} for configured model ${model}.`)
         }
       } catch (error) {
         if (
@@ -181,7 +209,7 @@ async function geminiRequest(
   }
 
   throw new Error(
-    `Gemini request failed (${lastStatus}) after retrying configured models.`,
+    `Gemini request failed with HTTP ${lastStatus} after retrying configured models.`,
   )
 }
 
@@ -192,7 +220,7 @@ async function main(req: Request) {
   try {
     requestBody = await req.json()
   } catch {
-    return json({ error: "Invalid analysis request." }, 400)
+    return failure("request_validation", "Invalid analysis request.", undefined, 400)
   }
   const { investigationId, analysisRunId, evidenceIds } = requestBody as Record<string, unknown>
   if (
@@ -200,18 +228,18 @@ async function main(req: Request) {
     !evidenceIds.length || evidenceIds.length > maxEvidenceCount ||
     evidenceIds.some((id: unknown) => !isUuid(id)) || new Set(evidenceIds).size !== evidenceIds.length
   ) {
-    return json({ error: "Invalid analysis request." }, 400)
+    return failure("request_validation", "Invalid analysis request.", analysisRunId, 400)
   }
 
   const authorization = req.headers.get("Authorization")
   if (!authorization?.startsWith("Bearer "))
-    return json({ error: "Authentication required." }, 401)
+    return failure("authorization", "Authentication required.", analysisRunId, 401)
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")
   if (!supabaseUrl || !serviceRoleKey || !anonKey)
-    return json({ error: "Server Supabase configuration is incomplete." }, 500)
+    return failure("authorization", "Server Supabase configuration is incomplete.", analysisRunId, 500)
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
   const caller = createClient(supabaseUrl, anonKey, {
@@ -219,16 +247,16 @@ async function main(req: Request) {
   })
   const { data: identity, error: identityError } = await caller.auth.getUser()
   if (identityError || !identity.user)
-    return json({ error: "Authentication required." }, 401)
+    return failure("authorization", "Authentication required.", analysisRunId, 401)
 
   const ownership = await supabase
     .from("investigations")
     .select("owner_id")
     .eq("id", investigationId)
     .maybeSingle()
-  if (ownership.error) return json({ error: ownership.error.message }, 500)
+  if (ownership.error) return failure("authorization", "Could not verify investigation access.", analysisRunId, 500)
   if (ownership.data?.owner_id !== identity.user.id)
-    return json({ error: "Investigation access denied." }, 403)
+    return failure("authorization", "Investigation access denied.", analysisRunId, 403)
 
   const run = await supabase
     .from("analysis_runs")
@@ -237,11 +265,11 @@ async function main(req: Request) {
     .eq("investigation_id", investigationId)
     .eq("requested_by", identity.user.id)
     .maybeSingle()
-  if (run.error) return json({ error: "Could not validate analysis run." }, 500)
-  if (!run.data) return json({ error: "Analysis run access denied." }, 403)
+  if (run.error) return failure("authorization", "Could not validate analysis run.", analysisRunId, 500)
+  if (!run.data) return failure("authorization", "Analysis run access denied.", analysisRunId, 403)
 
   const key = Deno.env.get("GEMINI_API_KEY")
-  if (!key) return json({ error: "Server analysis is not configured." }, 500)
+  if (!key) return failure("gemini_request", "Server analysis is not configured.", analysisRunId, 500)
 
   const updateRun = async (patch: Record<string, unknown>) => {
     const { error } = await supabase
@@ -251,9 +279,10 @@ async function main(req: Request) {
     if (error) throw error
   }
 
+  let stage: FailureStage = "run_claim"
   try {
     if (run.data.status !== "queued")
-      return json({ error: "Analysis run is already active or finished." }, 409)
+      return failure("run_claim", "Analysis run is already active or finished.", analysisRunId, 409)
     const claim = await supabase
       .from("analysis_runs")
       .update({
@@ -268,8 +297,9 @@ async function main(req: Request) {
       .select("id")
       .maybeSingle()
     if (claim.error) throw claim.error
-    if (!claim.data) return json({ error: "Analysis run is already active or finished." }, 409)
+    if (!claim.data) return failure("run_claim", "Analysis run is already active or finished.", analysisRunId, 409)
 
+    stage = "evidence_validation"
     const { data: rows, error } = await supabase
       .from("evidence")
       .select("id,filename,mime_type,storage_path,size_bytes")
@@ -296,6 +326,7 @@ async function main(req: Request) {
     const allowedEvidenceIds = new Set((rows ?? []).map((row) => row.id))
 
     for (const row of rows ?? []) {
+      stage = "evidence_download"
       metadata.push({
         evidenceId: row.id,
         filename: row.filename,
@@ -335,10 +366,12 @@ async function main(req: Request) {
     const primaryModel = Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash"
     const fallbackModel =
       Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash"
+    stage = "gemini_request"
     const payload = await geminiRequest(key, [primaryModel, fallbackModel], [
       { text: instruction },
       ...evidenceParts,
     ])
+    stage = "gemini_response"
     const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text
     if (typeof text !== "string")
       throw new Error("Gemini returned no analysis content.")
@@ -349,6 +382,7 @@ async function main(req: Request) {
     } catch {
       throw new Error("Gemini returned malformed JSON.")
     }
+    stage = "result_validation"
     assertResult(result)
 
     await updateRun({ stage: stages[4], progress: 64 })
@@ -378,6 +412,7 @@ async function main(req: Request) {
       recommended_evidence: Array.isArray(item.recommendedEvidence) && item.recommendedEvidence.every((value) => typeof value === "string" && value.length <= 1000) ? item.recommendedEvidence : [],
     }))
     for (const item of result.unknowns) checkedEvidenceIds(item.evidenceIds, allowedEvidenceIds)
+    stage = "persistence"
     const persisted = await supabase.rpc("persist_analysis_results", {
       run_id: analysisRunId, inv: investigationId, owner: identity.user.id,
       assessment_confidence: result.overallAssessment.confidence,
@@ -387,9 +422,13 @@ async function main(req: Request) {
     return json({ ok: true, status: "complete" })
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Analysis failed."
+    console.error(JSON.stringify({ stage, analysisRunId, error: detail }))
 
     try { await updateRun({ status: "failed", error_message: detail, completed_at: new Date().toISOString() }) }
-    catch (statusError) { return json({ ok: false, status: "failed", error: `${detail} Unable to record failure: ${statusError instanceof Error ? statusError.message : "database error"}` }, 500) }
+    catch (statusError) {
+      console.error(JSON.stringify({ stage: "failure_persistence", analysisRunId, error: statusError instanceof Error ? statusError.message : "database error" }))
+      return failure("failure_persistence", "Analysis failed, but the failure status could not be recorded. Refresh and contact an administrator.", analysisRunId, 500)
+    }
 
     const owner = await supabase
       .from("investigations")
@@ -397,12 +436,12 @@ async function main(req: Request) {
       .eq("id", investigationId)
       .maybeSingle()
     if (owner.error || !owner.data?.owner_id)
-      return json({ ok: false, status: "failed", error: `${detail} Unable to restore investigation state.` }, 500)
+      return failure("failure_persistence", "Analysis failed, but the investigation state could not be restored.", analysisRunId, 500)
     const investigationReset = await supabase
         .from("investigations")
         .update({ status: "ready", updated_at: new Date().toISOString() })
         .eq("id", investigationId)
-    if (investigationReset.error) return json({ ok: false, status: "failed", error: `${detail} Unable to restore investigation state.` }, 500)
+    if (investigationReset.error) return failure("failure_persistence", "Analysis failed, but the investigation state could not be restored.", analysisRunId, 500)
     const notification = await supabase.from("notifications").insert({
         user_id: owner.data.owner_id,
         investigation_id: investigationId,
@@ -410,28 +449,24 @@ async function main(req: Request) {
         body: detail,
         kind: "danger",
       })
-    if (notification.error) return json({ ok: false, status: "failed", error: `${detail} Unable to record failure notification.` }, 500)
+    if (notification.error) return failure("failure_persistence", "Analysis failed, but its failure notification could not be recorded.", analysisRunId, 500)
     const auditLog = await supabase.from("audit_log").insert({
         user_id: owner.data.owner_id,
         investigation_id: investigationId,
         action: "analysis_failed",
         metadata: { analysisRunId, error: detail },
       })
-    if (auditLog.error) return json({ ok: false, status: "failed", error: `${detail} Unable to record failure audit entry.` }, 500)
+    if (auditLog.error) return failure("failure_persistence", "Analysis failed, but its failure audit entry could not be recorded.", analysisRunId, 500)
 
     // Analysis failures are represented by analysis_runs.status/error_message.
     // Return HTTP 200 so the client does not lose the real diagnostic behind a
     // generic "Edge Function returned a non-2xx status code" error.
-    return json({ ok: false, status: "failed", error: detail })
+    return failure(stage, detail, analysisRunId)
   }
 }
 
 Deno.serve((req) =>
   main(req).catch((error) =>
-    json({
-      ok: false,
-      status: "failed",
-      error: error instanceof Error ? error.message : "Request failed.",
-    }),
+    failure("request_validation", "Request failed before analysis could start.", undefined, 500),
   ),
 )

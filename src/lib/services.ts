@@ -68,6 +68,31 @@ const mimeForFile = (file: File) => {
   if (!inferred || (file.type && file.type !== inferred && !(inferred === "image/jpeg" && file.type === "image/jpg") && !(inferred === "audio/wav" && file.type === "audio/x-wav"))) return null
   return file.type === "image/jpg" ? "image/jpeg" : file.type || inferred
 }
+type FunctionFailure = {
+  error?: string
+  stage?: string
+  message?: string
+  analysisRunId?: string
+}
+
+async function functionErrorMessage(error: unknown) {
+  const context =
+    error && typeof error === "object" && "context" in error
+      ? (error as { context?: unknown }).context
+      : undefined
+  if (context instanceof Response) {
+    try {
+      const diagnostic = (await context.json()) as FunctionFailure
+      if (diagnostic.message) {
+        const stage = diagnostic.stage ? ` (${diagnostic.stage})` : ""
+        return `${diagnostic.message}${stage}`
+      }
+    } catch {
+      // The response was not JSON; use the SDK message below.
+    }
+  }
+  return message(error)
+}
 
 export const authService = {
   async current(): Promise<Session | null> {
@@ -475,12 +500,20 @@ export const investigationService = {
       const invoke = await client.functions.invoke<{
         ok?: boolean
         error?: string
+        stage?: string
+        message?: string
       }>("analyze-evidence", {
         body: { investigationId, analysisRunId: runId, evidenceIds },
       })
-      if (invoke.error) throw new Error(invoke.error.message)
-      if (!invoke.data?.ok)
-        throw new Error(invoke.data?.error || "Analysis could not be started.")
+      if (invoke.error) throw new Error(await functionErrorMessage(invoke.error))
+      if (!invoke.data?.ok) {
+        const diagnostic = invoke.data
+        throw new Error(
+          diagnostic?.message
+            ? `${diagnostic.message}${diagnostic.stage ? ` (${diagnostic.stage})` : ""}`
+            : diagnostic?.error || "Analysis could not be started.",
+        )
+      }
       return runId
     } catch (reason) {
       const diagnostic = message(reason)
@@ -492,8 +525,10 @@ export const investigationService = {
         .from("investigations")
         .update({ status: "ready", updated_at: new Date().toISOString() })
         .eq("id", investigationId)
-      if (runFailure.error || investigationReset.error)
-        throw new Error(`${diagnostic} The failure state could not be fully recorded; refresh and contact an administrator if it remains analyzing.`)
+      if (runFailure.error || investigationReset.error) {
+        const writeError = runFailure.error ?? investigationReset.error
+        throw new Error(`${diagnostic} Failure recovery could not be fully recorded: ${writeError?.message ?? "database update failed"}. Refresh and contact an administrator if it remains analyzing.`)
+      }
       throw new Error(diagnostic)
     }
   },
