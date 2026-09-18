@@ -165,6 +165,7 @@ async function geminiRequest(
     generationConfig: { responseMimeType: "application/json" },
   }
   let lastStatus = 503
+  let lastDetail = "No response body was returned by Gemini."
   const uniqueModels = models.filter(
     (value, index, all) => value && all.indexOf(value) === index,
   )
@@ -186,11 +187,40 @@ async function geminiRequest(
         lastStatus = response.status
         if (response.ok) return response.json()
         const detail = await response.text().catch(() => "")
+        lastDetail = detail || "No response body was returned by Gemini."
+        console.error(
+          JSON.stringify({
+            stage: "gemini_request",
+            model,
+            attempt: attempt + 1,
+            status: response.status,
+            detail: lastDetail.slice(0, 1000),
+          }),
+        )
         if (![429, 500, 502, 503, 504].includes(response.status)) {
-          console.error(JSON.stringify({ stage: "gemini_request", model, status: response.status, detail: detail.slice(0, 500) }))
           throw new Error(`Gemini request failed with HTTP ${response.status} for configured model ${model}.`)
         }
       } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Gemini request failed with HTTP")
+        ) {
+          throw error
+        }
+        if (
+          error instanceof Error &&
+          !error.message.startsWith("Gemini request failed with HTTP")
+        ) {
+          console.error(
+            JSON.stringify({
+              stage: "gemini_request",
+              model,
+              attempt: attempt + 1,
+              status: error.name === "AbortError" ? "timeout" : lastStatus,
+              detail: error.message.slice(0, 1000),
+            }),
+          )
+        }
         if (
           attempt === 3 &&
           error instanceof Error &&
@@ -209,7 +239,7 @@ async function geminiRequest(
   }
 
   throw new Error(
-    `Gemini request failed with HTTP ${lastStatus} after retrying configured models.`,
+    `Gemini request failed with HTTP ${lastStatus} after retrying configured models. Google response: ${lastDetail.slice(0, 1000)}`,
   )
 }
 
