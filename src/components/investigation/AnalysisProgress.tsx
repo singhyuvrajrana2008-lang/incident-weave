@@ -20,7 +20,8 @@ export function AnalysisProgress({ analysisRunId, onComplete, onRetry }: { analy
         if (!run) { setError("Analysis run was not found. You can retry safely."); return; }
         readFailures = 0;
         setProgress(run.progress);
-        setStage(Math.min(ANALYSIS_STAGES.length - 1, Math.max(0, Math.floor(run.progress / 13))));
+        const serverStage = ANALYSIS_STAGES.indexOf(run.stage as (typeof ANALYSIS_STAGES)[number]);
+        setStage(serverStage >= 0 ? serverStage : Math.min(ANALYSIS_STAGES.length - 1, Math.max(0, Math.floor(run.progress / 13))));
         if (run.status === "complete") { onComplete(); return; }
         if (run.status === "failed") { setError(run.errorMessage || "Analysis failed. Review the evidence and try again."); return; }
         timer.current = window.setTimeout(poll, 1800);

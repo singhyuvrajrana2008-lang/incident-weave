@@ -51,6 +51,7 @@ export default function InvestigationWorkspace() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [rerunRunId, setRerunRunId] = useState<string | null>(null);
+  const [rerunStarting, setRerunStarting] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -191,14 +192,19 @@ export default function InvestigationWorkspace() {
             <Button
               variant="secondary"
               size="sm"
-              loading={!!rerunRunId}
+              loading={rerunStarting || !!rerunRunId}
+              disabled={rerunStarting || !!rerunRunId}
               icon={<RefreshCw className="size-3.5" />}
               onClick={async () => {
+                if (rerunStarting || rerunRunId) return;
+                setRerunStarting(true);
                 try {
                   const runId = await investigationService.rerunAnalysis(inv.id);
                   setRerunRunId(runId);
                 } catch (reason) {
                   toast({ title: "Analysis could not start", kind: "danger", desc: reason instanceof Error ? reason.message : "Unable to start analysis." });
+                } finally {
+                  setRerunStarting(false);
                 }
               }}
             >Re-run analysis</Button>
