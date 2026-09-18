@@ -532,6 +532,18 @@ export const investigationService = {
       throw new Error(diagnostic)
     }
   },
+  async rerunAnalysis(investigationId: string) {
+    const { data, error } = await requireSupabase()
+      .from("evidence")
+      .select("id")
+      .eq("investigation_id", investigationId)
+      .order("created_at", { ascending: true })
+      .limit(20)
+    if (error) throw new Error(message(error))
+    const evidenceIds = (data ?? []).map((row) => row.id as string)
+    if (!evidenceIds.length) throw new Error("Add at least one evidence file before running analysis.")
+    return investigationService.startAnalysis(investigationId, evidenceIds)
+  },
   async analysisStatus(analysisRunId: string): Promise<AnalysisRun | null> {
     const { data, error } = await requireSupabase()
       .from("analysis_runs")

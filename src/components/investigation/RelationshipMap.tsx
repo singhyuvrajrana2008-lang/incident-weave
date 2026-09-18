@@ -28,18 +28,23 @@ export function RelationshipMap({
   const evidence = investigation.evidence;
   const events = investigation.events;
   const contradictions = investigation.contradictions;
+  const MAP_TOP = 34;
+  const MAP_BOTTOM = 24;
+  const MAP_HEIGHT = Math.max(400, Math.max(evidence.length, events.length, contradictions.length) * 58 + MAP_TOP + MAP_BOTTOM);
 
   const layout = useMemo(() => {
     const col = (items: { id: string }[], x: number) => {
-      const gap = 380 / (items.length + 1);
-      return new Map(items.map((it, i) => [it.id, { x, y: gap * (i + 1) }]));
+      if (items.length === 0) return new Map();
+      const usableHeight = MAP_HEIGHT - MAP_TOP - MAP_BOTTOM;
+      const gap = usableHeight / (items.length + 1);
+      return new Map(items.map((it, i) => [it.id, { x, y: MAP_TOP + gap * (i + 1) }]));
     };
     return {
       ev: col(evidence, 90),
       evt: col(events, W / 2),
       con: col(contradictions, W - 90),
     };
-  }, [evidence, events, contradictions]);
+  }, [evidence, events, contradictions, MAP_HEIGHT]);
 
   const links = useMemo(() => {
     const out: { from: { x: number; y: number }; to: { x: number; y: number }; active: boolean; danger?: boolean }[] = [];
@@ -67,8 +72,8 @@ export function RelationshipMap({
 
   return (
     <div className="overflow-x-auto scroll-thin">
-      <div className="relative mx-auto" style={{ width: W, height: 400 }}>
-        <svg viewBox={`0 0 ${W} 400`} className="absolute inset-0 h-full w-full">
+      <div className="relative mx-auto" style={{ width: W, height: MAP_HEIGHT }}>
+        <svg viewBox={`0 0 ${W} ${MAP_HEIGHT}`} className="absolute inset-0 h-full w-full" aria-hidden="true">
           {links.map((l, i) => {
             const mx = (l.from.x + l.to.x) / 2;
             return (
@@ -89,9 +94,9 @@ export function RelationshipMap({
         </svg>
 
         {/* column labels */}
-        <div className="absolute left-[90px] top-1 -translate-x-1/2 font-mono text-[10px] uppercase tracking-wider text-fg-faint">Evidence</div>
-        <div className="absolute left-1/2 top-1 -translate-x-1/2 font-mono text-[10px] uppercase tracking-wider text-fg-faint">Events</div>
-        <div className="absolute top-1 font-mono text-[10px] uppercase tracking-wider text-fg-faint" style={{ left: W - 90, transform: "translateX(-50%)" }}>Conflicts</div>
+        <div className="absolute left-[90px] top-2 -translate-x-1/2 bg-panel px-1 font-mono text-[10px] uppercase tracking-wider text-fg-faint">Evidence</div>
+        <div className="absolute left-1/2 top-2 -translate-x-1/2 bg-panel px-1 font-mono text-[10px] uppercase tracking-wider text-fg-faint">Events</div>
+        <div className="absolute top-2 bg-panel px-1 font-mono text-[10px] uppercase tracking-wider text-fg-faint" style={{ left: W - 90, transform: "translateX(-50%)" }}>Conflicts</div>
 
         {evidence.map((e) => {
           const pt = layout.ev.get(e.id)!;

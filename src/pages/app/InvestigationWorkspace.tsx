@@ -10,7 +10,7 @@ import {
   GitBranch,
   ArrowLeft,
 } from "lucide-react";
-import { Page } from "../../components/shell/Page";
+import { Page, PageHeader } from "../../components/shell/Page";
 import {
   Badge,
   Button,
@@ -25,6 +25,7 @@ import {
   Tabs,
 } from "../../components/ui";
 import { Timeline } from "../../components/investigation/Timeline";
+import { AnalysisProgress } from "../../components/investigation/AnalysisProgress";
 import { ContradictionCard, UnknownCard } from "../../components/investigation/panels";
 import { RelationshipMap } from "../../components/investigation/RelationshipMap";
 import { EvidenceInspector, ContradictionDrawer } from "../../components/investigation/drawers";
@@ -49,11 +50,21 @@ export default function InvestigationWorkspace() {
   const [drawerContradiction, setDrawerContradiction] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rerunRunId, setRerunRunId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     setInv(undefined);
-    investigationService.get(id!).then((r) => setInv(r ?? null));
-  }, [id]);
+    setLoadError("");
+    investigationService
+      .get(id!)
+      .then((r) => setInv(r ?? null))
+      .catch((reason) => {
+        setLoadError(reason instanceof Error ? reason.message : "Unable to load this investigation.");
+        setInv(null);
+      });
+  }, [id, reloadToken]);
 
   useEffect(() => {
     if (tab) setParams({ tab }, { replace: true });
@@ -125,7 +136,7 @@ export default function InvestigationWorkspace() {
     }
   }
 
-  if (inv === undefined) return <Page><WorkspaceSkeleton /></Page>;
+  if (inv === undefined) return <Page>{loadError ? <EmptyState icon={<AlertTriangle className="size-6" />} title="Unable to load investigation" description={loadError} action={<Button variant="secondary" onClick={() => { setInv(undefined); setReloadToken((value) => value + 1); }}>Try again</Button>} /> : <WorkspaceSkeleton />}</Page>;
   if (inv === null)
     return (
       <Page>
@@ -134,6 +145,18 @@ export default function InvestigationWorkspace() {
           title="Investigation not found"
           description="This investigation may have been removed or the link is incorrect."
           action={<Link to="/app/investigations"><Button variant="secondary" icon={<ArrowLeft className="size-4" />}>Back to investigations</Button></Link>}
+        />
+      </Page>
+    );
+
+  if (rerunRunId)
+    return (
+      <Page>
+        <PageHeader eyebrow="Live analysis" title={inv.name} subtitle="Results will appear here after the configured analysis service completes." />
+        <AnalysisProgress
+          analysisRunId={rerunRunId}
+          onComplete={() => { setRerunRunId(null); setReloadToken((value) => value + 1); }}
+          onRetry={() => setRerunRunId(null)}
         />
       </Page>
     );
@@ -165,7 +188,20 @@ export default function InvestigationWorkspace() {
             <p className="mt-1 text-sm text-fg-dim">Last analyzed {inv.updatedAt} · Incident date {inv.incidentDate}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<RefreshCw className="size-3.5" />} onClick={() => toast({ title: "Re-analysis queued", kind: "info", desc: "Correlating latest evidence…" })}>Re-run analysis</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={!!rerunRunId}
+              icon={<RefreshCw className="size-3.5" />}
+              onClick={async () => {
+                try {
+                  const runId = await investigationService.rerunAnalysis(inv.id);
+                  setRerunRunId(runId);
+                } catch (reason) {
+                  toast({ title: "Analysis could not start", kind: "danger", desc: reason instanceof Error ? reason.message : "Unable to start analysis." });
+                }
+              }}
+            >Re-run analysis</Button>
             <Button variant="secondary" size="sm" icon={<Plus className="size-3.5" />} onClick={() => toast({ title: "Add evidence", kind: "info", desc: "Open the intake to add sources." })}>Add evidence</Button>
             <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />} onClick={() => toast({ title: "Export started", kind: "success", desc: "Preparing investigation report." })}>Export</Button>
             <div className="relative">
