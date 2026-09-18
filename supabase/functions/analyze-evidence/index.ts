@@ -398,7 +398,7 @@ async function main(req: Request) {
     const fallbackModel =
       (Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.6-flash").trim()
     const secondaryFallbackModel =
-      (Deno.env.get("GEMINI_SECONDARY_FALLBACK_MODEL") || "gemini-2.5-flash")
+      (Deno.env.get("GEMINI_SECONDARY_FALLBACK_MODEL") || "gemini-3.1-flash-lite")
         .trim()
     stage = "gemini_request"
     const payload = await geminiRequest(
