@@ -408,3 +408,35 @@ html.light .landing-cursor-trail {
 .landing-page .box-interactive {
   box-shadow: 0 14px 30px -26px rgba(0,0,0,0.82), 0 1px 0 rgba(255,255,255,0.035) inset;
 }
+
+
+@media (hover: none), (pointer: coarse) {
+  .landing-page .floating-tile,
+  .landing-page .box-interactive,
+  .landing-page .sidebar-tile {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: none !important;
+  }
+
+  .landing-page .floating-tile::before,
+  .landing-page .box-interactive::before,
+  .landing-page .box-interactive::after,
+  .landing-page .sidebar-tile::after,
+  .landing-page button:not(:disabled)::after {
+    display: none !important;
+  }
+
+  .landing-page .floating-tile:hover,
+  .landing-page .box-interactive:hover,
+  .landing-page .sidebar-tile:hover,
+  .landing-page button:not(:disabled):hover {
+    transform: none !important;
+    box-shadow: none;
+  }
+
+  .landing-page .hero-weave,
+  .landing-page .grid-texture {
+    background-image: none;
+  }
+}
