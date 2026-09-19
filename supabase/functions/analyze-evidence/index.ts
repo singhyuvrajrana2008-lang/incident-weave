@@ -21,7 +21,7 @@ type Confidence = "high" | "medium" | "low"
 type Basis = "observed" | "inferred" | "ai-observation" | "uncertain"
 type Finding = {
   id: string
-  timestamp?: string
+  timestamp?: string | null
   title: string
   description: string
   confidence: Confidence
@@ -113,6 +113,7 @@ function checkedEvidenceIds(values: unknown, allowed: Set<string>) {
 }
 
 function safeTimestamp(value: unknown) {
+  if (value === null || value === undefined) return null
   if (typeof value !== "string" || !value.trim()) return null
   const parsed = Date.parse(value)
   return Number.isNaN(parsed) ? null : new Date(parsed).toISOString()
@@ -148,7 +149,7 @@ function assertResult(value: unknown): asserts value is Result {
     }
   }
   for (const event of v.timeline) {
-    if (event.timestamp !== undefined && !safeTimestamp(event.timestamp)) throw new Error("Gemini returned an invalid timestamp.")
+    if (event.timestamp !== undefined && event.timestamp !== null && !safeTimestamp(event.timestamp)) throw new Error("Gemini returned an invalid timestamp. Use an RFC3339 timestamp or null when the time cannot be normalized.")
     if (event.basis !== undefined && !["observed", "inferred", "ai-observation", "uncertain"].includes(event.basis)) throw new Error("Gemini returned an invalid basis.")
   }
   for (const item of [...v.contradictions, ...v.unknowns]) if (item.severity !== undefined && !["low", "medium", "high"].includes(item.severity)) throw new Error("Gemini returned an invalid severity.")
@@ -400,7 +401,7 @@ async function main(req: Request) {
 
     await updateRun({ stage: stages[1], progress: 20 })
 
-    const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":"","title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions":[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. Preserve approximate timestamps instead of inventing precision. Sort timeline chronologically where possible.`
+    const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":null,"title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions:[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. For timeline.timestamp, return only an RFC3339/ISO-8601 timestamp when the evidence supports one; otherwise return null. Never return human phrases such as "around 10:20", "10:20 AM", "unknown", or "~10:20" in the timestamp field. Put approximate or uncertain timing in the description instead. Sort the timeline chronologically where possible.`
 
     await updateRun({ stage: stages[3], progress: 42 })
     const primaryModel = configuredModel("GEMINI_MODEL", "gemini-3.8-flash")
