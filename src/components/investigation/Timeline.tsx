@@ -67,7 +67,7 @@ export function Timeline({
               {/* content */}
               <div
                 className={cn(
-                  "min-w-0 flex-1 rounded-md border p-3 transition-all",
+                  "floating-tile min-w-0 flex-1 rounded-md border p-3 transition-all",
                   selected
                     ? "border-accent/50 bg-accent/5 shadow-[0_0_0_1px_rgba(56,189,248,0.2)]"
                     : highlighted
