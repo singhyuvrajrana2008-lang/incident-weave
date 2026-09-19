@@ -406,6 +406,6 @@ export default function Landing() {
         </div>
       </footer>
         </motion.div>
-    </div>
+    </div></MotionConfig>
   );
 }
