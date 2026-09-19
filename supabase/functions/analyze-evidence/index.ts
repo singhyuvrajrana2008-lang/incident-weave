@@ -31,8 +31,13 @@ type Finding = {
   resolutionNeeded?: string
   recommendedEvidence?: string[]
 }
+type EvidenceSummary = {
+  evidenceId: string
+  summary: string
+}
 type Result = {
   overallAssessment: { summary: string; confidence: Confidence }
+  evidenceSummaries: EvidenceSummary[]
   timeline: Finding[]
   contradictions: Finding[]
   unknowns: Finding[]
@@ -99,6 +104,25 @@ function isUuid(value: unknown): value is string {
   return typeof value === "string" && uuidPattern.test(value)
 }
 
+function checkedEvidenceSummaries(values: unknown, allowed: Set<string>) {
+  if (!Array.isArray(values) || values.length !== allowed.size)
+    throw new Error("Gemini did not return one summary per evidence item.")
+  const seen = new Set<string>()
+  return values.map((value) => {
+    if (!value || typeof value !== "object")
+      throw new Error("Gemini returned an invalid evidence summary.")
+    const evidenceId = (value as { evidenceId?: unknown }).evidenceId
+    const summary = (value as { summary?: unknown }).summary
+    if (!isUuid(evidenceId) || typeof summary !== "string")
+      throw new Error("Gemini returned an invalid evidence summary.")
+    const normalized = summary.trim()
+    if (!allowed.has(evidenceId) || seen.has(evidenceId) || !normalized || normalized.length > 1500)
+      throw new Error("Gemini returned invalid evidence summary references.")
+    seen.add(evidenceId)
+    return { evidence_id: evidenceId, summary: normalized }
+  })
+}
+
 function checkedEvidenceIds(values: unknown, allowed: Set<string>) {
   if (!Array.isArray(values) || values.length > allowed.size)
     throw new Error("Gemini returned invalid evidence references.")
@@ -125,11 +149,24 @@ function assertResult(value: unknown): asserts value is Result {
     !v ||
     typeof v !== "object" ||
     !v.overallAssessment ||
+    !Array.isArray(v.evidenceSummaries) ||
     !Array.isArray(v.timeline) ||
     !Array.isArray(v.contradictions) ||
     !Array.isArray(v.unknowns)
   ) {
     throw new Error("Gemini response did not match the required schema.")
+  }
+  for (const item of v.evidenceSummaries) {
+    if (
+      !item ||
+      typeof item.evidenceId !== "string" ||
+      !item.evidenceId.trim() ||
+      typeof item.summary !== "string" ||
+      !item.summary.trim() ||
+      item.summary.length > 1500
+    ) {
+      throw new Error("Gemini returned an invalid evidence summary.")
+    }
   }
   if (typeof v.overallAssessment.summary !== "string" || !v.overallAssessment.summary.trim() || v.overallAssessment.summary.length > 5000 || !["high", "medium", "low"].includes(v.overallAssessment.confidence)) {
     throw new Error("Gemini returned an invalid confidence value.")
@@ -269,7 +306,7 @@ async function main(req: Request) {
     !evidenceIds.length || evidenceIds.length > maxEvidenceCount ||
     evidenceIds.some((id: unknown) => !isUuid(id)) || new Set(evidenceIds).size !== evidenceIds.length
   ) {
-    return failure("request_validation", "Invalid analysis request.", analysisRunId, 400)
+    return failure("request_validation", "Invalid analysis request.", typeof analysisRunId === "string" ? analysisRunId : undefined, 400)
   }
 
   const authorization = req.headers.get("Authorization")
@@ -401,7 +438,7 @@ async function main(req: Request) {
 
     await updateRun({ stage: stages[1], progress: 20 })
 
-    const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"timeline":[{"id":"event-1","timestamp":null,"title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions:[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. For timeline.timestamp, return only an RFC3339/ISO-8601 timestamp when the evidence supports one; otherwise return null. Never return human phrases such as "around 10:20", "10:20 AM", "unknown", or "~10:20" in the timestamp field. Put approximate or uncertain timing in the description instead. Sort the timeline chronologically where possible.`
+    const instruction = `You are IncidentWeave, an AI-assisted evidence-correlation system. Analyze all attached evidence together. Never invent facts or make legal/criminal judgments. Every finding must be evidence-linked. Use observed when directly supported, inferred when derived across sources, and uncertain when evidence is insufficient or conflicting. Return JSON only in this exact shape: {"overallAssessment":{"summary":"","confidence":"high|medium|low"},"evidenceSummaries":[{"evidenceId":"","summary":""}],"timeline":[{"id":"event-1","timestamp":null,"title":"","description":"","confidence":"high|medium|low","basis":"observed|inferred|ai-observation|uncertain","evidenceIds":[]}],"contradictions:[{"id":"contradiction-1","title":"","description":"","confidence":"high|medium|low","severity":"low|medium|high","evidenceIds":[],"resolutionNeeded":""}],"unknowns":[{"id":"unknown-1","title":"","description":"","confidence":"high|medium|low","recommendedEvidence":[],"evidenceIds":[]}]}. Only use evidence IDs from this metadata list: ${JSON.stringify(metadata)}. For timeline.timestamp, return only an RFC3339/ISO-8601 timestamp when the evidence supports one; otherwise return null. Never return human phrases such as "around 10:20", "10:20 AM", "unknown", or "~10:20" in the timestamp field. Put approximate or uncertain timing in the description instead. For evidenceSummaries, return exactly one entry for every attached evidence item, using the exact evidence ID from the metadata. Write a concise 1–3 sentence factual summary of what that evidence contains or shows. Do not invent or infer facts that are not present in the evidence. Keep each summary under 1500 characters. Sort the timeline chronologically where possible.`
 
     await updateRun({ stage: stages[3], progress: 42 })
     const primaryModel = configuredModel("GEMINI_MODEL", "gemini-3.8-flash")
@@ -429,6 +466,10 @@ async function main(req: Request) {
     }
     stage = "result_validation"
     assertResult(result)
+    const evidenceSummaries = checkedEvidenceSummaries(
+      result.evidenceSummaries,
+      allowedEvidenceIds,
+    )
 
     await updateRun({ stage: stages[4], progress: 64 })
 
@@ -462,6 +503,7 @@ async function main(req: Request) {
       run_id: analysisRunId, inv: investigationId, owner: identity.user.id,
       assessment_confidence: result.overallAssessment.confidence,
       timeline: events, contradictions, unknowns,
+      evidence_summaries: evidenceSummaries,
     })
     if (persisted.error) throw new Error(`Could not persist analysis results: ${persisted.error.message}`)
     return json({ ok: true, status: "complete" })

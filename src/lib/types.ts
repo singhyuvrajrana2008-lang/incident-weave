@@ -15,6 +15,7 @@ export interface Evidence {
   status: EvidenceStatus;
   confidence: Confidence;
   sourceId: string;
+  summary?: string;
   observations: string[];
   relatedEvents: string[]; // event ids
   relatedContradictions: string[]; // contradiction ids
