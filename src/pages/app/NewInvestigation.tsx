@@ -132,7 +132,6 @@ export default function NewInvestigation() {
       setInvestigationId(id)
       setStep("evidence")
     } catch (reason) {
-      setUploading(false)
       setError(
         reason instanceof Error
           ? reason.message
@@ -165,6 +164,7 @@ export default function NewInvestigation() {
       setAnalysisRunId(runId)
       setStep("processing")
     } catch (reason) {
+      setUploading(false)
       setError(
         reason instanceof Error
           ? reason.message
