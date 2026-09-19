@@ -43,7 +43,7 @@ export default function SignIn() {
           </div>
         )}
         <Field label="Email">
-          <Input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@fieldoffice.gov" />
+          <Input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@fieldoffice.gov" className="font-semibold text-fg" />
         </Field>
         <Field label="Password" hint={<Link to="/forgot-password" className="text-accent hover:underline">Forgot password?</Link> as unknown as string}>
           <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />

@@ -48,12 +48,22 @@ export function EvidenceInspector({
       }
     >
       {/* preview */}
-      <div className="grid aspect-video place-items-center rounded-md border border-line-2 bg-bg-2 grid-texture">
-        <div className="text-center">
-          <EvidenceIcon type={evidence.type} className="mx-auto size-10" />
-          <p className="mt-2 font-mono text-xs text-fg-dim">{evidence.type.toUpperCase()} preview</p>
+      {evidence.type === "text" && evidence.notes ? (
+        <div className="overflow-hidden rounded-md border border-line-2 bg-bg-2">
+          <div className="flex items-center justify-between border-b border-line px-3 py-2">
+            <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-fg-muted">Text preview</span>
+            <span className="font-mono text-[10px] text-fg-faint">Source content</span>
+          </div>
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap px-4 py-3 font-mono text-xs leading-relaxed text-fg-muted scroll-thin">{evidence.notes}</pre>
         </div>
-      </div>
+      ) : (
+        <div className="grid aspect-video place-items-center rounded-md border border-line-2 bg-bg-2 grid-texture">
+          <div className="text-center">
+            <EvidenceIcon type={evidence.type} className="mx-auto size-10" />
+            <p className="mt-2 font-mono text-xs text-fg-dim">{evidence.type.toUpperCase()} preview</p>
+          </div>
+        </div>
+      )
 
       <SectionLabel>File information</SectionLabel>
       <div className="rounded-md border border-line bg-surface px-3">

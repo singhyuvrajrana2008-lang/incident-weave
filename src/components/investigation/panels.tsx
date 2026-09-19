@@ -26,7 +26,7 @@ export function ContradictionCard({
       onClick={onSelect}
       animate={{ opacity: dimmed ? 0.45 : 1 }}
       className={cn(
-        "block w-full rounded-md border p-4 text-left transition-all",
+        "group block w-full rounded-md border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg",
         selected ? "border-crimson/50 bg-crimson/5" : "border-line bg-surface hover:border-crimson/30",
       )}
     >
@@ -38,7 +38,7 @@ export function ContradictionCard({
         </div>
         <StatusBadge status={c.status} />
       </div>
-      <h4 className="mt-2 font-medium text-fg">{c.title}</h4>
+      <h4 className="mt-2 font-medium text-fg transition-transform duration-200 group-hover:-translate-y-0.5">{c.title}</h4>
       <p className="mt-1 text-sm text-fg-dim">{c.issue}</p>
       <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-sm border border-line bg-bg-2 p-2.5">
         <div className="flex items-center gap-2 min-w-0">
