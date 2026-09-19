@@ -53,7 +53,7 @@ const navGroups = [
 ];
 
 function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }) {
-  const { sidebarCollapsed, session, signOut, setPaletteOpen } = useApp();
+  const { sidebarCollapsed, session, signOut, setPaletteOpen, toggleSidebar } = useApp();
   const nav = useNavigate();
   const collapsed = mobile ? false : sidebarCollapsed;
   const [menuOpen, setMenuOpen] = useState(false);
