@@ -289,6 +289,17 @@ export default function NewInvestigation() {
             </Button>
           </div>
           <Panel>
+            {uploading && (
+              <div className="border-b border-amber/20 bg-amber/5 px-4 py-2.5">
+                <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-amber">Uploading evidence</span>
+                  <span className="font-mono uppercase tracking-wider text-amber/70">In progress</span>
+                </div>
+                <div className="h-1 overflow-hidden rounded-full bg-amber/10">
+                  <div className="h-full w-2/5 animate-pulse rounded-full bg-amber" />
+                </div>
+              </div>
+            )}
             {files.length === 0 ? (
               <EmptyState
                 icon={<UploadCloud className="size-6" />}
