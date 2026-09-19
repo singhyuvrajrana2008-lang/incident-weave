@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
 import type { ReactNode, MouseEvent as ReactMouseEvent } from "react";
 import {
   ArrowRight,
@@ -16,7 +16,7 @@ import {
   Moon,
   Download,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "../lib/cn";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/ui";
@@ -50,6 +50,64 @@ function InteractiveBox({ children, className }: { children: ReactNode; classNam
   );
 }
 
+function LandingCursor() {
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  const ringX = useSpring(x, { stiffness: 420, damping: 34, mass: 0.18 });
+  const ringY = useSpring(y, { stiffness: 420, damping: 34, mass: 0.18 });
+  const haloX = useSpring(x, { stiffness: 95, damping: 28, mass: 0.45 });
+  const haloY = useSpring(y, { stiffness: 95, damping: 28, mass: 0.45 });
+  const [interactive, setInteractive] = useState(false);
+
+  useEffect(() => {
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!finePointer || reducedMotion) return;
+
+    let wasInteractive = false;
+    const onMove = (event: PointerEvent) => {
+      x.set(event.clientX);
+      y.set(event.clientY);
+
+      const target = event.target;
+      const surface = target instanceof Element
+        ? target.closest("a, button:not(:disabled), .box-interactive")
+        : null;
+      const nextInteractive = Boolean(surface);
+      if (nextInteractive !== wasInteractive) {
+        wasInteractive = nextInteractive;
+        setInteractive(nextInteractive);
+      }
+    };
+    const onLeave = () => {
+      wasInteractive = false;
+      setInteractive(false);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+    };
+  }, [x, y]);
+
+  return (
+    <>
+      <motion.div
+        aria-hidden="true"
+        className="landing-cursor"
+        style={{ x: ringX, y: ringY, scale: interactive ? 1.35 : 1 }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="landing-cursor-halo"
+        style={{ x: haloX, y: haloY, scale: interactive ? 1.12 : 1 }}
+      />
+    </>
+  );
+}
+
 function Section({ eyebrow, title, children, id }: { eyebrow: string; title: string; children: ReactNode; id?: string }) {
   return (
     <section id={id} className="mx-auto max-w-6xl px-6 py-20 md:py-28">
@@ -74,21 +132,13 @@ export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useApp();
 
-  // Scroll-driven typography + color shift on the hero heading
+  // Keep the hero motion cinematic but restrained: only lift and fade, never neon color shifts.
   const { scrollYProgress } = useScroll();
-  const headingColor = useTransform(scrollYProgress, [0, 0.18], theme === "dark" ? ["#f3f5f7", "#6aa9ff"] : ["#161a20", "#1769d1"]);
-  const headingSpacing = useTransform(scrollYProgress, [0, 0.18], ["-0.02em", "0.05em"]);
   const heroLift = useTransform(scrollYProgress, [0, 0.25], [0, -40]);
   const heroFade = useTransform(scrollYProgress, [0, 0.25], [1, 0.55]);
 
-  function onHeroMove(e: ReactMouseEvent<HTMLElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
-  }
-
   return (
-    <div className="min-h-screen">
+    <div className="landing-page min-h-screen"><LandingCursor />
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -140,7 +190,7 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden cursor-glow" onMouseMove={onHeroMove}>
+      <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 grid-texture opacity-40" />
         <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.05fr_1fr] md:py-24">
           <div>
@@ -153,12 +203,12 @@ export default function Landing() {
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}
-              style={{ color: headingColor, letterSpacing: headingSpacing }}
-              className="font-display text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-5xl md:text-6xl"
+              
+              className="font-display text-[3.45rem] font-black leading-[0.9] tracking-[-0.045em] sm:text-6xl md:text-[5.6rem]"
             >
               Weave the evidence.
               <br />
-              <span className="text-accent">Reconstruct</span> the incident.
+              <span className="text-fg">Reconstruct</span> the incident.
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }}

@@ -2,25 +2,25 @@ import { motion } from "motion/react";
 import { FileText, Image, MessageSquare, Mic, Phone } from "lucide-react";
 
 const fragments = [
-  { icon: Image, label: "Screenshot", color: "#6aa9ff", y: 34 },
-  { icon: Phone, label: "Call log", color: "#53d6cb", y: 82 },
-  { icon: FileText, label: "PDF", color: "#f05252", y: 130 },
-  { icon: MessageSquare, label: "Message", color: "#6aa9ff", y: 178 },
-  { icon: Mic, label: "Recording", color: "#34d399", y: 226 },
+  { icon: Image, label: "Screenshot", color: "#f2f2ee", y: 34 },
+  { icon: Phone, label: "Call log", color: "#aaa9a3", y: 82 },
+  { icon: FileText, label: "PDF", color: "#777872", y: 130 },
+  { icon: MessageSquare, label: "Message", color: "#f2f2ee", y: 178 },
+  { icon: Mic, label: "Recording", color: "#c9c9c3", y: 226 },
 ];
 
 const timelineNodes = [
-  { t: "10:12", tone: "#34d399", y: 42 },
-  { t: "10:14", tone: "#38bdf8", y: 94 },
-  { t: "10:16", tone: "#34d399", y: 146 },
-  { t: "10:18", tone: "#f05252", y: 198, label: "conflict" },
-  { t: "10:21", tone: "#fbbf24", y: 250, label: "unknown" },
+  { t: "10:12", tone: "#d7d7d1", y: 42 },
+  { t: "10:14", tone: "#9d9d97", y: 94 },
+  { t: "10:16", tone: "#d7d7d1", y: 146 },
+  { t: "10:18", tone: "#f05a61", y: 198, label: "conflict" },
+  { t: "10:21", tone: "#f4c451", y: 250, label: "unknown" },
 ];
 
 export function HeroWeave() {
   return (
     <div className="relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(420px_260px_at_50%_50%,rgba(56,189,248,0.08),transparent_72%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(420px_260px_at_50%_50%,rgba(255,255,255,0.055),transparent_72%)]" />
 
       <svg
         viewBox="0 0 460 300"
