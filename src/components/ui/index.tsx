@@ -293,29 +293,39 @@ export function ErrorState({ title, description, onRetry, retryLabel = "Try agai
 /* ------------------------------ Tabs ------------------------------ */
 export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: string; count?: number }[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 border-b border-line">
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={cn(
-            "relative -mb-px px-3.5 py-2.5 text-sm font-medium transition-colors",
-            active === t.id ? "text-fg" : "text-fg-dim hover:text-fg-muted",
-          )}
-        >
-          <span className="flex items-center gap-2">
-            {t.label}
+    <div className="px-1 pb-1 pt-1.5">
+      <div role="tablist" aria-label="Investigation sections" className="flex w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-bg-2 p-1 scroll-thin">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={active === t.id}
+            onClick={() => onChange(t.id)}
+            className={cn(
+              "relative flex min-w-max items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium transition-all duration-200",
+              active === t.id ? "bg-surface text-fg shadow-sm" : "text-fg-dim hover:bg-surface/70 hover:text-fg-muted",
+            )}
+          >
+            {active === t.id && (
+              <motion.span
+                layoutId="tab-active"
+                className="absolute inset-0 rounded-sm border border-line-2 bg-surface"
+                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10">{t.label}</span>
             {t.count != null && (
-              <span className={cn("rounded-xs px-1.5 py-0.5 text-[11px] tabular", active === t.id ? "bg-accent/15 text-accent" : "bg-surface-2 text-fg-dim")}>
+              <span className={cn(
+                "relative z-10 rounded-xs px-1.5 py-0.5 text-[10px] tabular",
+                active === t.id ? "bg-accent/12 text-accent" : "bg-surface-2 text-fg-faint",
+              )}>
                 {t.count}
               </span>
             )}
-          </span>
-          {active === t.id && (
-            <motion.span layoutId="tab-underline" className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />
-          )}
-        </button>
-      ))}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
