@@ -84,7 +84,102 @@
 
 /* Scrollbars hidden by default, revealed on scroll/hover */
 @layer utilities {
-  /* Shared elevated tile surface used across the product UI. */
+  /* Cursor-reactive floating surface system. */
+  .floating-tile,
+  .box-interactive {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background-color: color-mix(in srgb, var(--color-surface) 76%, transparent) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(115%);
+    backdrop-filter: blur(16px) saturate(115%);
+    box-shadow: 0 18px 42px -30px rgba(0, 0, 0, 0.82), 0 1px 0 rgba(255, 255, 255, 0.045) inset;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.32s ease;
+    will-change: transform;
+  }
+  .floating-tile::before,
+  .box-interactive::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(
+      180px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+      color-mix(in srgb, var(--color-accent) 14%, transparent),
+      transparent 68%
+    );
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+  .floating-tile:hover,
+  .box-interactive:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-line-strong);
+    box-shadow: 0 24px 50px -31px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  }
+  .floating-tile:hover::before,
+  .box-interactive:hover::before { opacity: 1; }
+
+  /* Every clickable button gets the same restrained lift + cursor sheen. */
+  button:not(:disabled) {
+    position: relative;
+    isolation: isolate;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  }
+  button:not(:disabled)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(
+      120px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+      rgba(255, 255, 255, 0.11),
+      transparent 68%
+    );
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  button:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+  button:not(:disabled):hover::after { opacity: 1; }
+  button:not(:disabled):active { transform: translateY(0); }
+
+  /* Compact labels remain crisp and readable without overpowering their content. */
+  [class~="text-xs"],
+  [class~="text-[10px]"],
+  [class~="text-[11px]"] {
+    font-weight: 600;
+  }
+
+  .sidebar-tile {
+    position: relative;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-surface) 42%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.24s ease, box-shadow 0.24s ease;
+  }
+  .sidebar-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(130px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), rgba(255, 255, 255, 0.08), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+  .sidebar-tile:hover {
+    transform: translateX(3px);
+    background: color-mix(in srgb, var(--color-surface-2) 76%, transparent);
+    box-shadow: 0 12px 24px -20px rgba(0, 0, 0, 0.8);
+  }
+  .sidebar-tile:hover::after { opacity: 1; }
+
+
   .floating-tile {
     background-color: color-mix(in srgb, var(--color-surface) 78%, transparent) !important;
     -webkit-backdrop-filter: blur(14px);
