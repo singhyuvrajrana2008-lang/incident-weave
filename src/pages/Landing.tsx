@@ -373,7 +373,7 @@ export default function Landing() {
 
       {/* Final CTA */}
       <div className="border-t border-line bg-bg-2">
-        <div className="mx-auto max-w-4xl px-6 py-24 text-center">
+        <div className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
           <Reveal>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-fg md:text-5xl">
               Turn scattered evidence into a<br className="hidden sm:block" /> reconstructed incident.
