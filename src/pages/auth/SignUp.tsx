@@ -65,7 +65,7 @@ export default function SignUp() {
           <Input required autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Dana Whitfield" />
         </Field>
         <Field label="Email">
-          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@fieldoffice.gov" />
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@fieldoffice.gov" className="font-semibold text-fg" />
         </Field>
         <Field label="Password">
           <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
