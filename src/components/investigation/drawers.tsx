@@ -63,7 +63,7 @@ export function EvidenceInspector({
             <p className="mt-2 font-mono text-xs text-fg-dim">{evidence.type.toUpperCase()} preview</p>
           </div>
         </div>
-      )
+      )}
 
       <SectionLabel>File information</SectionLabel>
       <div className="rounded-md border border-line bg-surface px-3">
