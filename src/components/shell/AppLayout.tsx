@@ -106,7 +106,7 @@ function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(
-                        "group relative flex items-center gap-3 rounded-sm px-2.5 py-2 text-sm font-medium transition-colors",
+                        "sidebar-tile group relative flex items-center gap-3 rounded-sm px-2.5 py-2 text-sm font-medium transition-colors",
                         collapsed && "justify-center",
                         isActive ? "bg-accent/10 text-accent" : "text-fg-muted hover:bg-surface-2 hover:text-fg",
                       )
