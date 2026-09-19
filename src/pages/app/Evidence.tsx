@@ -94,7 +94,7 @@ export default function EvidencePage() {
                       <div className="flex items-center gap-2.5">
                         <div className="grid size-8 place-items-center rounded-sm border border-line-2 bg-surface-2"><EvidenceIcon type={e.type} /></div>
                         <div>
-                          <div className="font-mono text-sm text-fg group-hover:text-accent">{e.filename}</div>
+                          <div className="font-display text-sm font-semibold text-fg transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-accent">{e.filename}</div>
                           <div className="font-mono text-xs text-fg-dim">{e.size}</div>
                         </div>
                       </div>
