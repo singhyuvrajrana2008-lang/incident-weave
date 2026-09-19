@@ -141,7 +141,7 @@ function MapNode({
       onClick={onClick}
       style={{ left: x, top: y }}
       className={cn(
-        "absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-sm border px-2 py-1.5 transition-all",
+        "floating-tile absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-sm border px-2 py-1.5 transition-all",
         active
           ? danger ? "border-crimson bg-crimson/15 scale-105" : "border-accent bg-accent/15 scale-105"
           : danger ? "border-crimson/30 bg-surface hover:border-crimson/50" : "border-line-2 bg-surface hover:border-line-strong",
