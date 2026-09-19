@@ -100,6 +100,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => setThemeState((current) => current === "dark" ? "light" : "dark"), []);
 
   useEffect(() => {
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!finePointer) return;
+
     const onPointerMove = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;

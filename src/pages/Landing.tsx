@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
+import { MotionConfig, motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
 import type { ReactNode, MouseEvent as ReactMouseEvent } from "react";
 import {
   ArrowRight,
@@ -132,15 +132,24 @@ const publicNav = [
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [touchDevice, setTouchDevice] = useState(false);
   const { theme, toggleTheme } = useApp();
 
-  // Keep the hero motion cinematic but restrained: only lift and fade, never neon color shifts.
+  useEffect(() => {
+    const media = window.matchMedia("(hover: none), (pointer: coarse)");
+    const update = () => setTouchDevice(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  // Desktop gets a restrained parallax; touch devices skip scroll-linked transforms for smoother scrolling.
   const { scrollYProgress } = useScroll();
   const heroLift = useTransform(scrollYProgress, [0, 0.25], [0, -40]);
   const heroFade = useTransform(scrollYProgress, [0, 0.25], [1, 0.55]);
 
   return (
-    <div className="landing-page min-h-screen"><LandingCursor /><motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+    <MotionConfig reducedMotion={touchDevice ? "always" : "never"}><div className="landing-page min-h-screen"><LandingCursor /><motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
