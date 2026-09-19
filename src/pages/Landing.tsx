@@ -66,6 +66,7 @@ const publicNav = [
   { label: "Product", href: "#product" },
   { label: "How It Works", href: "#how" },
   { label: "Investigation", href: "#workspace" },
+  { label: "Demo", href: "#demo" },
   { label: "About", href: "#about" },
 ];
 
@@ -75,7 +76,7 @@ export default function Landing() {
 
   // Scroll-driven typography + color shift on the hero heading
   const { scrollYProgress } = useScroll();
-  const headingColor = useTransform(scrollYProgress, [0, 0.18], ["#eef2f7", "#56a8f5"]);
+  const headingColor = useTransform(scrollYProgress, [0, 0.18], theme === "dark" ? ["#f3f5f7", "#6aa9ff"] : ["#161a20", "#1769d1"]);
   const headingSpacing = useTransform(scrollYProgress, [0, 0.18], ["-0.02em", "0.05em"]);
   const heroLift = useTransform(scrollYProgress, [0, 0.25], [0, -40]);
   const heroFade = useTransform(scrollYProgress, [0, 0.25], [1, 0.55]);
