@@ -53,10 +53,10 @@ function InteractiveBox({ children, className }: { children: ReactNode; classNam
 function LandingCursor() {
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
-  const ringX = useSpring(x, { stiffness: 420, damping: 34, mass: 0.18 });
-  const ringY = useSpring(y, { stiffness: 420, damping: 34, mass: 0.18 });
-  const haloX = useSpring(x, { stiffness: 95, damping: 28, mass: 0.45 });
-  const haloY = useSpring(y, { stiffness: 95, damping: 28, mass: 0.45 });
+  const dotX = useSpring(x, { stiffness: 700, damping: 42, mass: 0.12 });
+  const dotY = useSpring(y, { stiffness: 700, damping: 42, mass: 0.12 });
+  const trailX = useSpring(x, { stiffness: 180, damping: 30, mass: 0.3 });
+  const trailY = useSpring(y, { stiffness: 180, damping: 30, mass: 0.3 });
   const [interactive, setInteractive] = useState(false);
 
   useEffect(() => {
@@ -70,18 +70,23 @@ function LandingCursor() {
       y.set(event.clientY);
 
       const target = event.target;
-      const surface = target instanceof Element
-        ? target.closest("a, button:not(:disabled), .box-interactive")
-        : null;
-      const nextInteractive = Boolean(surface);
+      const interactiveTarget =
+        target instanceof Element
+          ? target.closest("a, button:not(:disabled), .box-interactive")
+          : null;
+      const nextInteractive = Boolean(interactiveTarget);
+
       if (nextInteractive !== wasInteractive) {
         wasInteractive = nextInteractive;
         setInteractive(nextInteractive);
       }
     };
+
     const onLeave = () => {
       wasInteractive = false;
       setInteractive(false);
+      x.set(-100);
+      y.set(-100);
     };
 
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -96,17 +101,18 @@ function LandingCursor() {
     <>
       <motion.div
         aria-hidden="true"
-        className="landing-cursor"
-        style={{ x: ringX, y: ringY, scale: interactive ? 1.35 : 1 }}
+        className="landing-cursor-trail"
+        style={{ x: trailX, y: trailY, scale: interactive ? 1.35 : 1, opacity: interactive ? 0.16 : 0.1 }}
       />
       <motion.div
         aria-hidden="true"
-        className="landing-cursor-halo"
-        style={{ x: haloX, y: haloY, scale: interactive ? 1.12 : 1 }}
+        className="landing-cursor-dot"
+        style={{ x: dotX, y: dotY, scale: interactive ? 1.2 : 1 }}
       />
     </>
   );
 }
+
 
 function Section({ eyebrow, title, children, id }: { eyebrow: string; title: string; children: ReactNode; id?: string }) {
   return (
