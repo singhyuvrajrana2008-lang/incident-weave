@@ -71,6 +71,15 @@ export default function InvestigationWorkspace() {
     if (tab) setParams({ tab }, { replace: true });
   }, [tab]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
+
   // derive highlighted sets from current selection
   const highlight = useMemo(() => {
     const events = new Set<string>();
