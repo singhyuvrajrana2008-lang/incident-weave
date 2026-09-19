@@ -100,6 +100,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => setThemeState((current) => current === "dark" ? "light" : "dark"), []);
 
   useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const surface = target.closest<HTMLElement>(".floating-tile, .box-interactive, button:not(:disabled)");
+      if (!surface) return;
+      const rect = surface.getBoundingClientRect();
+      surface.style.setProperty("--cursor-x", `${event.clientX - rect.left}px`);
+      surface.style.setProperty("--cursor-y", `${event.clientY - rect.top}px`);
+    };
+    document.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => document.removeEventListener("pointermove", onPointerMove);
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
