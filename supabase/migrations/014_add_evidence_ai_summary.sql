@@ -2,6 +2,17 @@
 alter table public.evidence_extractions
   add column if not exists summary text;
 
+-- Retire the previous RPC signature so only the summary-aware contract remains.
+drop function if exists public.persist_analysis_results(
+  uuid,
+  uuid,
+  uuid,
+  text,
+  jsonb,
+  jsonb,
+  jsonb
+);
+
 -- Extend the existing atomic persistence function with evidence summaries.
 create or replace function public.persist_analysis_results(
   run_id uuid,
