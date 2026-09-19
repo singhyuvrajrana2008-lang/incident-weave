@@ -50,7 +50,7 @@ function SettingRow({ title, desc, children }: { title: string; desc: string; ch
 }
 
 export default function Settings() {
-  const { toast, signOut } = useApp();
+  const { toast, signOut, theme, setTheme } = useApp();
   const nav = useNavigate();
   const [tab, setTab] = useState("general");
   const [toggles, setToggles] = useState({
@@ -114,8 +114,11 @@ export default function Settings() {
 
           {tab === "appearance" && (
             <Panel className="px-5 py-2">
-              <SettingRow title="Theme" desc="IncidentWeave is optimized for a dark analytical environment.">
-                <Select defaultValue="dark"><option value="dark">Dark</option><option value="dark" disabled>Light (coming soon)</option></Select>
+              <SettingRow title="Theme" desc="Switch between the dark analytical workspace and a light workspace theme.">
+                <Select value={theme} onChange={(event) => setTheme(event.target.value as "dark" | "light")}>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </Select>
               </SettingRow>
               <SettingRow title="Compact density" desc="Tighter spacing for information-dense views."><Toggle checked={toggles.density} onChange={set("density")} /></SettingRow>
               <SettingRow title="Reduced motion" desc="Minimize animations across the interface."><Toggle checked={toggles.reducedMotion} onChange={set("reducedMotion")} /></SettingRow>
