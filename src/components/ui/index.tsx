@@ -31,7 +31,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     lg: "h-11 px-6 text-[15px]",
   };
   const variants = {
-    primary: "bg-accent text-void hover:bg-accent-2 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]",
+    primary: "bg-fg text-bg hover:bg-white/90 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset] hover:-translate-y-px",
     secondary: "bg-raised text-fg border border-line-2 hover:border-line-strong hover:bg-raised-2",
     outline: "bg-transparent text-fg border border-line-2 hover:border-line-strong hover:bg-surface",
     ghost: "bg-transparent text-fg-muted hover:text-fg hover:bg-surface-2",

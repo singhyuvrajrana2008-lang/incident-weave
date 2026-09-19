@@ -26,7 +26,7 @@ export function ContradictionCard({
       onClick={onSelect}
       animate={{ opacity: dimmed ? 0.45 : 1 }}
       className={cn(
-        "group block w-full rounded-md border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg",
+        "group floating-tile block w-full rounded-md border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg",
         selected ? "border-crimson/50 bg-crimson/5" : "border-line bg-surface hover:border-crimson/30",
       )}
     >
@@ -83,7 +83,7 @@ export function UnknownCard({
     <motion.div
       layout
       className={cn(
-        "rounded-md border p-4 transition-all",
+        "floating-tile rounded-md border p-4 transition-all",
         selected ? "border-amber/50 bg-amber/5" : "border-line bg-surface",
       )}
     >

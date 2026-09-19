@@ -28,7 +28,7 @@ export default function Notifications() {
               <button
                 key={n.id}
                 onClick={() => markRead(n.id)}
-                className={cn("flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-2", !n.read && "bg-accent/[0.03]")}
+                className={cn("floating-tile flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-2", !n.read && "bg-accent/[0.03]")}
               >
                 <div className="grid size-9 shrink-0 place-items-center rounded-sm border border-line-2 bg-surface-2">
                   <Icon className={cn("size-4.5", toneFor[n.kind])} />
