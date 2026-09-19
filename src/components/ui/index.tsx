@@ -203,7 +203,8 @@ export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { tone: "accent" | "crimson" | "amber" | "verified" | "neutral"; label: string }> = {
     complete: { tone: "verified", label: "Completed" },
     analyzing: { tone: "accent", label: "Analyzing" },
-    ready: { tone: "neutral", label: "Ready" },
+    uploading: { tone: "amber", label: "Uploading" },
+    ready: { tone: "verified", label: "Ready" },
     draft: { tone: "neutral", label: "Draft" },
     archived: { tone: "neutral", label: "Archived" },
     verified: { tone: "verified", label: "Verified" },
