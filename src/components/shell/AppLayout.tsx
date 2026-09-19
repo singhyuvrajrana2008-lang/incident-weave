@@ -95,7 +95,7 @@ function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }
       <nav className="flex-1 overflow-y-auto scroll-thin px-3 py-4">
         {navGroups.map((group) => (
           <div key={group.label} className="mb-5">
-            {!collapsed && <div className="px-2.5 pb-2 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-faint">{group.label}</div>}
+            {!collapsed && <div className={cn("px-2.5 pb-2 font-display text-[10px] font-semibold uppercase tracking-[0.16em]", group.label === "Workspace" || group.label === "Analysis" ? "text-fg" : "text-fg-faint")}>{group.label}</div>}
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const link = (
