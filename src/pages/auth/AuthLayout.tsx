@@ -19,7 +19,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           >
             <h1 className="font-display text-2xl font-bold tracking-tight text-fg">{title}</h1>
             <p className="mt-1.5 text-sm text-fg-dim">{subtitle}</p>
-            <div className="mt-7">{children}</div>
+            <div className="floating-tile mt-7 rounded-lg border border-line p-5 sm:p-6">{children}</div>
           </motion.div>
         </div>
         <p className="text-xs text-fg-faint">Demonstration platform · Backend-ready for Supabase authentication.</p>
