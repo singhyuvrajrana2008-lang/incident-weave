@@ -361,67 +361,42 @@ h3, h4, h5, h6 {
   font-weight: 700;
 }
 
-/* Premium landing-page cursor: a small ring with a soft, lagging halo. */
-.landing-cursor {
+/* Minimal landing cursor: precision dot + restrained trailing light. */
+.landing-cursor-dot,
+.landing-cursor-trail {
   position: fixed;
   left: 0;
   top: 0;
+  pointer-events: none;
+  border-radius: 9999px;
+  transform: translate3d(-50%, -50%, 0);
+}
+.landing-cursor-dot {
   z-index: 80;
-  width: 18px;
-  height: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 9999px;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  transform: translate3d(-50%, -50%, 0);
-  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.035);
-}
-.landing-cursor::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 3px;
-  height: 3px;
-  border-radius: 9999px;
+  width: 6px;
+  height: 6px;
   background: #ffffff;
-  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
 }
-.landing-cursor-halo {
-  position: fixed;
-  left: 0;
-  top: 0;
+.landing-cursor-trail {
   z-index: 79;
-  width: 150px;
-  height: 150px;
-  border-radius: 9999px;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(255,255,255,0.085), rgba(255,255,255,0.035) 28%, transparent 70%);
-  filter: blur(1px);
-  mix-blend-mode: screen;
-  transform: translate3d(-50%, -50%, 0);
-}
-@media (hover: hover) and (pointer: fine) {
-  .landing-cursor,
-  .landing-cursor-halo {
-    display: block;
-  }
+  width: 34px;
+  height: 34px;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 35%, transparent 72%);
+  filter: blur(2px);
 }
 @media (hover: none), (pointer: coarse) {
-  .landing-cursor,
-  .landing-cursor-halo {
+  .landing-cursor-dot,
+  .landing-cursor-trail {
     display: none;
   }
 }
-html.light .landing-cursor {
-  border-color: rgba(0, 0, 0, 0.55);
-  box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.035);
-}
-html.light .landing-cursor::after {
+html.light .landing-cursor-dot {
   background: #111111;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.12);
 }
-html.light .landing-cursor-halo {
-  background: radial-gradient(circle, rgba(0,0,0,0.055), rgba(0,0,0,0.02) 28%, transparent 70%);
+html.light .landing-cursor-trail {
+  background: radial-gradient(circle, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.035) 35%, transparent 72%);
   mix-blend-mode: multiply;
 }
 @media (prefers-reduced-motion: reduce) {
