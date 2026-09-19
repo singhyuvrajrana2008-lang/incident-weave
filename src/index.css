@@ -361,42 +361,37 @@ h3, h4, h5, h6 {
   font-weight: 700;
 }
 
-/* Minimal landing cursor: precision dot + restrained trailing light. */
-.landing-cursor-dot,
+/* Minimal landing cursor: ambient trailing light only. */
 .landing-cursor-trail {
   position: fixed;
   left: 0;
   top: 0;
-  pointer-events: none;
+  z-index: 79;
+  width: 48px;
+  height: 48px;
   border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.10) 0%,
+    rgba(255,255,255,0.045) 30%,
+    transparent 72%
+  );
+  filter: blur(3px);
   transform: translate3d(-50%, -50%, 0);
 }
-.landing-cursor-dot {
-  z-index: 80;
-  width: 6px;
-  height: 6px;
-  background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
-}
-.landing-cursor-trail {
-  z-index: 79;
-  width: 34px;
-  height: 34px;
-  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 35%, transparent 72%);
-  filter: blur(2px);
-}
 @media (hover: none), (pointer: coarse) {
-  .landing-cursor-dot,
   .landing-cursor-trail {
     display: none;
   }
 }
-html.light .landing-cursor-dot {
-  background: #111111;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.12);
-}
 html.light .landing-cursor-trail {
-  background: radial-gradient(circle, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.035) 35%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    rgba(0,0,0,0.07) 0%,
+    rgba(0,0,0,0.025) 30%,
+    transparent 72%
+  );
   mix-blend-mode: multiply;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -404,4 +399,13 @@ html.light .landing-cursor-trail {
   .landing-cursor-halo {
     display: none !important;
   }
+}
+
+
+/* Compact landing rhythm */
+.landing-page section {
+  scroll-margin-top: 4.5rem;
+}
+.landing-page .box-interactive {
+  box-shadow: 0 14px 30px -26px rgba(0,0,0,0.82), 0 1px 0 rgba(255,255,255,0.035) inset;
 }
