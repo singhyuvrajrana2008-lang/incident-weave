@@ -118,7 +118,6 @@ export function HeroWeave() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1 + i * 0.11, duration: 0.35 }}
-            style={{ top: `${(n.y / 300) * 100}%` }}
             className="absolute right-0 flex -translate-y-1/2 items-center gap-2 rounded-sm border px-2.5 py-1.5"
             style={{ borderColor: `${n.tone}44`, background: `${n.tone}12`, top: `${(n.y / 300) * 100}%` }}
           >
