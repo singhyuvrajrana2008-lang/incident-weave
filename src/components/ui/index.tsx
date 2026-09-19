@@ -137,7 +137,7 @@ export function Field({ label, hint, error, children }: { label: string; hint?: 
 /* ------------------------------ Surfaces ------------------------------ */
 export function Panel({ className, children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-md border border-line bg-surface", className)} {...rest}>
+    <div className={cn("floating-tile rounded-md border border-line", className)} {...rest}>
       {children}
     </div>
   );
