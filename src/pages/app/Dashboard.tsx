@@ -89,53 +89,46 @@ export default function Dashboard() {
                 </div>
               </Panel>
 
-              {/* Coverage / confidence */}
+              {/* Evidence summary */}
               <Panel>
-                <PanelHeader title="Evidence coverage" subtitle="Confidence and evidence classification" />
-                <div className="flex items-center gap-6 p-5">
-                  <ConfidenceRing value={primary.confidence} label="Confidence" />
-                  <div className="min-w-0 flex-1">
-                    {(() => {
-                      const coverageTotal =
-                        primary.coverage.verified +
-                        primary.coverage.uncertain +
-                        primary.coverage.missing;
-                      const hasClassification = coverageTotal > 0;
-
-                      return hasClassification ? (
-                        <div className="space-y-3">
-                          {[
-                            { label: "Verified", value: primary.coverage.verified, tone: "verified" as const },
-                            { label: "Uncertain", value: primary.coverage.uncertain, tone: "amber" as const },
-                            { label: "Missing", value: primary.coverage.missing, tone: "amber" as const },
-                          ].map((c) => (
-                            <div key={c.label}>
-                              <div className="mb-1 flex items-center justify-between text-sm">
-                                <span className="text-fg-muted">{c.label}</span>
-                                <span className="font-mono tabular text-fg">{c.value}</span>
-                              </div>
-                              <Progress value={(c.value / coverageTotal) * 100} tone={c.tone} />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-md border border-line bg-surface-2/60 px-3.5 py-3">
-                          <div className="font-mono text-[10px] uppercase tracking-wider text-fg-faint">
-                            Evidence classification
-                          </div>
-                          <p className="mt-1 text-sm text-fg-muted">
-                            Not available yet
-                          </p>
-                          <p className="mt-0.5 text-xs leading-relaxed text-fg-dim">
-                            Confidence is available, but verified / uncertain / missing counts have not been classified.
-                          </p>
-                        </div>
-                      );
-                    })()}
+                <PanelHeader title="Evidence coverage" subtitle="Live investigation signals" />
+                <div className="p-5">
+                  <div className="flex items-center gap-5">
+                    <ConfidenceRing value={primary.confidence} label="Confidence" />
+                    <div className="min-w-0 flex-1 space-y-2.5">
+                      <div className="flex items-center justify-between rounded-sm border border-line bg-surface-2/60 px-3 py-2.5">
+                        <span className="text-xs text-fg-dim">Sources</span>
+                        <span className="font-mono text-sm font-semibold tabular text-fg">{primary.evidenceCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-sm border border-line bg-surface-2/60 px-3 py-2.5">
+                        <span className="text-xs text-fg-dim">Timeline events</span>
+                        <span className="font-mono text-sm font-semibold tabular text-fg">{primary.eventCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-sm border border-line bg-surface-2/60 px-3 py-2.5">
+                        <span className="text-xs text-fg-dim">Needs review</span>
+                        <span className={cn(
+                          "font-mono text-sm font-semibold tabular",
+                          primary.requiresReview > 0 ? "text-amber" : "text-verified",
+                        )}>
+                          {primary.requiresReview}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 overflow-hidden rounded-full bg-surface-3">
+                    <motion.div
+                      className="h-1.5 rounded-full bg-verified"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${primary.confidence}%` }}
+                      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[11px]">
+                    <span className="text-fg-faint">Analysis confidence</span>
+                    <span className="font-mono tabular text-verified">{primary.confidence}%</span>
                   </div>
                 </div>
-              </Panel>
-            </div>
+              </Panel>            </div>
           )}
 
           {/* Recent investigations + activity */}
