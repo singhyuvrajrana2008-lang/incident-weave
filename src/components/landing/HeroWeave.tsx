@@ -19,7 +19,7 @@ const timelineNodes = [
 
 export function HeroWeave() {
   return (
-    <div className="relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
+    <div className="relative aspect-[5/3] w-full min-w-0 overflow-hidden rounded-lg border border-line-2 bg-bg-2 grid-texture">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(420px_260px_at_50%_50%,rgba(255,255,255,0.055),transparent_72%)]" />
 
       <svg
