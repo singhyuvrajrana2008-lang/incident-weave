@@ -74,6 +74,7 @@ export default function NewInvestigation() {
   const [files, setFiles] = useState<QueuedFile[]>([])
   const [uploadedEvidenceIds, setUploadedEvidenceIds] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
   const [analysisRunId, setAnalysisRunId] = useState<string | null>(null)
 
@@ -131,6 +132,7 @@ export default function NewInvestigation() {
       setInvestigationId(id)
       setStep("evidence")
     } catch (reason) {
+      setUploading(false)
       setError(
         reason instanceof Error
           ? reason.message
@@ -145,6 +147,8 @@ export default function NewInvestigation() {
     if (!investigationId || files.length === 0 || busy) return
     setBusy(true)
     setError("")
+    const needsUpload = uploadedEvidenceIds.length === 0
+    setUploading(needsUpload)
     try {
       const evidenceIds = uploadedEvidenceIds.length
         ? uploadedEvidenceIds
@@ -153,6 +157,7 @@ export default function NewInvestigation() {
             files.map(({ file }) => file),
           )
       setUploadedEvidenceIds(evidenceIds)
+      setUploading(false)
       const runId = await investigationService.startAnalysis(
         investigationId,
         evidenceIds,
@@ -304,7 +309,7 @@ export default function NewInvestigation() {
                         {item.type}
                       </p>
                     </div>
-                    <StatusBadge status="ready" />
+                    <StatusBadge status={uploading ? "uploading" : "ready"} />
                     <button
                       aria-label={`Remove ${item.file.name}`}
                       onClick={() =>
