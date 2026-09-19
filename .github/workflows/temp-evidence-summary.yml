@@ -1,9 +1,9 @@
 name: Verify Evidence Summary
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/evidence-ai-summary
+      - main
 
 jobs:
   verify:
