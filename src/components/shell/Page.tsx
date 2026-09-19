@@ -9,7 +9,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow }: { title: React
   return (
     <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div>
-        {eyebrow && <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">{eyebrow}</p>}
+        {eyebrow && <p className="mb-1 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">{eyebrow}</p>}
         <h1 className="font-display text-2xl font-bold tracking-tight text-fg">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-fg-dim">{subtitle}</p>}
       </div>
