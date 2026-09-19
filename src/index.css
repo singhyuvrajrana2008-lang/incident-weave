@@ -395,8 +395,7 @@ html.light .landing-cursor-trail {
   mix-blend-mode: multiply;
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-cursor,
-  .landing-cursor-halo {
+  .landing-cursor-trail {
     display: none !important;
   }
 }
