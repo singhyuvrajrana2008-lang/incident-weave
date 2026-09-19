@@ -1,0 +1,9 @@
+INCIDENTWEAVE DEMO EVIDENCE — FICTIONAL DATA
+Case: Northbridge Warehouse — 14 June 2026
+
+09:42 — Security log records badge NB-042 entering Loading Bay 2.
+10:05 — Witness statement from Maya Chen says the loading bay was empty when she arrived.
+10:18 — Camera note states a delivery van was present at Loading Bay 2.
+10:27 — Call log records a call from "Maya" to the shift supervisor.
+
+This file is synthetic evidence created for product testing only.
