@@ -65,9 +65,29 @@ function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }
 
   return (
     <div className={cn("flex h-full flex-col border-r border-line bg-bg-2", collapsed ? "w-[68px]" : "w-[248px]")}>
-      <div className={cn("flex h-16 items-center border-b border-line", collapsed ? "justify-center" : "px-4 justify-between")}>
+      <div className={cn("flex h-16 items-center border-b border-line", collapsed ? "justify-center px-2" : "justify-between px-4")}>
         <Link to="/app/dashboard" onClick={onClose}>{collapsed ? <LogoMark /> : <Logo />}</Link>
-        {mobile && <button onClick={onClose} className="text-fg-dim"><X className="size-5" /></button>}
+        <div className="flex items-center gap-1.5">
+          {!mobile && (
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title={collapsed ? "Show sidebar" : "Hide sidebar"}
+              aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
+              className={cn(
+                "grid size-8 place-items-center rounded-sm text-fg-dim transition-colors hover:bg-surface-2 hover:text-fg",
+                collapsed && "absolute right-1 top-4",
+              )}
+            >
+              {collapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
+            </button>
+          )}
+          {mobile && (
+            <button type="button" onClick={onClose} aria-label="Close menu" className="grid size-8 place-items-center rounded-sm text-fg-dim hover:bg-surface-2 hover:text-fg">
+              <X className="size-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto scroll-thin px-3 py-4">
@@ -170,8 +190,14 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-3">
         <button onClick={onMenu} className="text-fg-muted hover:text-fg lg:hidden"><Menu className="size-5" /></button>
-        <button onClick={toggleSidebar} className="hidden text-fg-dim hover:text-fg lg:block">
-          <PanelLeft className="size-5" />
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          className="hidden rounded-sm p-1.5 text-fg-dim transition-colors hover:bg-surface-2 hover:text-fg lg:block"
+        >
+          {sidebarCollapsed ? <PanelLeft className="size-5" /> : <PanelLeftClose className="size-5" />}
         </button>
         <nav className="hidden items-center gap-1.5 text-sm sm:flex">
           {crumbs.length === 0 && <span className="text-fg">Dashboard</span>}
