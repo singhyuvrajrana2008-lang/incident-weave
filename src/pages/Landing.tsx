@@ -54,7 +54,7 @@ function Section({ eyebrow, title, children, id }: { eyebrow: string; title: str
   return (
     <section id={id} className="mx-auto max-w-6xl px-6 py-20 md:py-28">
       <Reveal>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">{eyebrow}</p>
+        <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-accent">{eyebrow}</p>
         <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight text-fg md:text-4xl">{title}</h2>
       </Reveal>
       <div className="mt-10">{children}</div>
