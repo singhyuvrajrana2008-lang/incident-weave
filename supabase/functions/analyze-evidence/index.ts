@@ -306,7 +306,7 @@ async function main(req: Request) {
     !evidenceIds.length || evidenceIds.length > maxEvidenceCount ||
     evidenceIds.some((id: unknown) => !isUuid(id)) || new Set(evidenceIds).size !== evidenceIds.length
   ) {
-    return failure("request_validation", "Invalid analysis request.", analysisRunId, 400)
+    return failure("request_validation", "Invalid analysis request.", typeof analysisRunId === "string" ? analysisRunId : undefined, 400)
   }
 
   const authorization = req.headers.get("Authorization")
