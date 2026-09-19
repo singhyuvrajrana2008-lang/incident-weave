@@ -53,10 +53,8 @@ function InteractiveBox({ children, className }: { children: ReactNode; classNam
 function LandingCursor() {
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
-  const dotX = useSpring(x, { stiffness: 700, damping: 42, mass: 0.12 });
-  const dotY = useSpring(y, { stiffness: 700, damping: 42, mass: 0.12 });
-  const trailX = useSpring(x, { stiffness: 180, damping: 30, mass: 0.3 });
-  const trailY = useSpring(y, { stiffness: 180, damping: 30, mass: 0.3 });
+  const trailX = useSpring(x, { stiffness: 150, damping: 28, mass: 0.35 });
+  const trailY = useSpring(y, { stiffness: 150, damping: 28, mass: 0.35 });
   const [interactive, setInteractive] = useState(false);
 
   useEffect(() => {
@@ -98,30 +96,28 @@ function LandingCursor() {
   }, [x, y]);
 
   return (
-    <>
-      <motion.div
-        aria-hidden="true"
-        className="landing-cursor-trail"
-        style={{ x: trailX, y: trailY, scale: interactive ? 1.35 : 1, opacity: interactive ? 0.16 : 0.1 }}
-      />
-      <motion.div
-        aria-hidden="true"
-        className="landing-cursor-dot"
-        style={{ x: dotX, y: dotY, scale: interactive ? 1.2 : 1 }}
-      />
-    </>
+    <motion.div
+      aria-hidden="true"
+      className="landing-cursor-trail"
+      style={{
+        x: trailX,
+        y: trailY,
+        scale: interactive ? 1.45 : 1,
+        opacity: interactive ? 0.2 : 0.12,
+      }}
+    />
   );
 }
 
 
 function Section({ eyebrow, title, children, id }: { eyebrow: string; title: string; children: ReactNode; id?: string }) {
   return (
-    <section id={id} className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+    <section id={id} className="mx-auto max-w-6xl px-6 py-14 md:py-18">
       <Reveal>
         <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-accent">{eyebrow}</p>
-        <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight text-fg md:text-4xl">{title}</h2>
+        <h2 className="mt-2 max-w-2xl font-display text-3xl font-bold tracking-tight text-fg md:text-4xl">{title}</h2>
       </Reveal>
-      <div className="mt-10">{children}</div>
+      <div className="mt-7">{children}</div>
     </section>
   );
 }
@@ -144,7 +140,7 @@ export default function Landing() {
   const heroFade = useTransform(scrollYProgress, [0, 0.25], [1, 0.55]);
 
   return (
-    <div className="landing-page min-h-screen"><LandingCursor />
+    <div className="landing-page min-h-screen"><LandingCursor /><motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -198,11 +194,11 @@ export default function Landing() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 grid-texture opacity-40" />
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.05fr_1fr] md:py-24">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-6 py-10 md:grid-cols-[1.05fr_1fr] md:gap-10 md:py-14">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-line-2 bg-surface/60 px-3 py-1"
+              className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-line-2 bg-surface/60 px-3 py-1"
             >
               <span className="size-1.5 rounded-full bg-accent pulse-ring" />
               <span className="text-xs text-fg-muted">Multimodal evidence correlation</span>
@@ -218,7 +214,7 @@ export default function Landing() {
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }}
-              className="mt-5 max-w-xl text-[15px] leading-relaxed text-fg-muted"
+              className="mt-3 max-w-xl text-[15px] leading-[1.55] text-fg-muted"
             >
               IncidentWeave connects fragmented evidence across screenshots, call records, documents,
               recordings and other sources to reconstruct what happened, surface contradictions, and
@@ -226,12 +222,12 @@ export default function Landing() {
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.18 }}
-              className="mt-8 flex flex-wrap gap-3"
+              className="mt-6 flex flex-wrap gap-3"
             >
               <Link to="/sign-up"><Button variant="primary" size="lg" icon={<ArrowRight className="size-4" />}>Start an investigation</Button></Link>
               <a href="#how"><Button variant="outline" size="lg">Explore how it works</Button></a>
             </motion.div>
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-6">
+            <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-5">
               {[
                 ["Evidence types", "6+"],
                 ["Correlation layers", "Cross-source"],
@@ -245,7 +241,7 @@ export default function Landing() {
             </div>
           </div>
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.1 }}
+            initial={{ opacity: 0, y: 18, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
             style={{ y: heroLift, opacity: heroFade }}
           >
             <HeroWeave />
@@ -377,7 +373,7 @@ export default function Landing() {
 
       {/* Final CTA */}
       <div className="border-t border-line bg-bg-2">
-        <div className="mx-auto max-w-4xl px-6 py-24 text-center">
+        <div className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
           <Reveal>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-fg md:text-5xl">
               Turn scattered evidence into a<br className="hidden sm:block" /> reconstructed incident.
@@ -400,6 +396,7 @@ export default function Landing() {
           <p className="text-xs text-fg-dim">© 2026 IncidentWeave — demonstration platform. Fictional data only.</p>
         </div>
       </footer>
+        </motion.div>
     </div>
   );
 }
