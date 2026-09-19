@@ -20,6 +20,8 @@ import {
   User,
   ChevronsUpDown,
   Command,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Logo, LogoMark } from "../Logo";
@@ -182,7 +184,7 @@ function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }
 }
 
 function Topbar({ onMenu }: { onMenu: () => void }) {
-  const { toggleSidebar, setPaletteOpen, unreadCount, sidebarCollapsed } = useApp();
+  const { toggleSidebar, setPaletteOpen, unreadCount, sidebarCollapsed, theme, toggleTheme } = useApp();
   const loc = useLocation();
   const crumbs = loc.pathname.split("/").filter(Boolean).slice(1);
 
@@ -222,6 +224,15 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             </span>
           )}
         </Link>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="grid size-9 place-items-center rounded-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+        >
+          {theme === "dark" ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+        </button>
         <Link to="/app/settings" className="grid size-9 place-items-center rounded-sm text-fg-muted hover:bg-surface-2 hover:text-fg"><Settings className="size-5" /></Link>
       </div>
     </header>
