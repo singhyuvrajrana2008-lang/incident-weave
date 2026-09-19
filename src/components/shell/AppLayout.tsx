@@ -182,7 +182,7 @@ function Sidebar({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }
 }
 
 function Topbar({ onMenu }: { onMenu: () => void }) {
-  const { toggleSidebar, setPaletteOpen, unreadCount } = useApp();
+  const { toggleSidebar, setPaletteOpen, unreadCount, sidebarCollapsed } = useApp();
   const loc = useLocation();
   const crumbs = loc.pathname.split("/").filter(Boolean).slice(1);
 
