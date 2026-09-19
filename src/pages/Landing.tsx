@@ -156,7 +156,7 @@ export default function Landing() {
           <Link to="/"><Logo /></Link>
           <nav className="hidden items-center gap-7 md:flex">
             {publicNav.map((n) => (
-              <a key={n.label} href={n.href} className="text-sm text-fg-muted transition-colors hover:text-fg">{n.label}</a>
+              <a key={n.label} href={n.href} className={cn("text-sm font-bold transition-colors", theme === "dark" ? "text-white hover:text-white/70" : "text-black hover:text-black/60")}>{n.label}</a>
             ))}
           </nav>
           <div className="hidden items-center gap-2 md:flex">
@@ -180,7 +180,7 @@ export default function Landing() {
           <div className="border-t border-line bg-bg-2 px-6 py-4 md:hidden">
             <nav className="flex flex-col gap-3">
               {publicNav.map((n) => (
-                <a key={n.label} href={n.href} onClick={() => setMenuOpen(false)} className="text-sm text-fg-muted">{n.label}</a>
+                <a key={n.label} href={n.href} onClick={() => setMenuOpen(false)} className={cn("text-sm font-bold transition-colors", theme === "dark" ? "text-white hover:text-white/70" : "text-black hover:text-black/60")}>{n.label}</a>
               ))}
               <div className="mt-2 flex gap-2">
                 <button
