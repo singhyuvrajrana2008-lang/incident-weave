@@ -46,7 +46,7 @@ function InteractiveBox({ children, className }: { children: ReactNode; classNam
   return (
     <div onMouseMove={onMove} className={cn("box-interactive", className)}>
       {children}
-    </div></MotionConfig>
+    </div>
   );
 }
 
