@@ -7,6 +7,7 @@ import {
   Sparkles,
   UploadCloud,
   X,
+  Download,
 } from "lucide-react"
 import { Page, PageHeader } from "../../components/shell/Page"
 import { AnalysisProgress } from "../../components/investigation/AnalysisProgress"
@@ -254,6 +255,15 @@ export default function NewInvestigation() {
       )}
       {step === "evidence" && (
         <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-md border border-accent/20 bg-accent/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-medium text-fg">Need something safe to test?</div>
+              <p className="mt-0.5 text-xs text-fg-dim">Use the fictional IncidentWeave demo evidence from the landing page.</p>
+            </div>
+            <a href="/#demo" className="inline-flex shrink-0">
+              <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />}>Demo evidence</Button>
+            </a>
+          </div>
           <div
             onClick={() => inputRef.current?.click()}
             onDragOver={(event) => event.preventDefault()}
