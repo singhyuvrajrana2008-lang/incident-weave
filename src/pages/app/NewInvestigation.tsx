@@ -20,6 +20,7 @@ import {
   StatusBadge,
   Textarea,
 } from "../../components/ui"
+import { formatFileSize } from "../../lib/format"
 import { investigationService } from "../../lib/services"
 import type { EvidenceType } from "../../lib/types"
 import { useApp } from "../../store/AppContext"
@@ -299,7 +300,7 @@ export default function NewInvestigation() {
                         {item.file.name}
                       </p>
                       <p className="text-xs text-fg-dim">
-                        {(item.file.size / 1_000_000).toFixed(1)} MB ·{" "}
+                        {formatFileSize(item.file.size)} ·{" "}
                         {item.type}
                       </p>
                     </div>
@@ -339,24 +340,46 @@ export default function NewInvestigation() {
         </div>
       )}
       {step === "review" && (
-        <Panel className="max-w-3xl p-6 text-center">
-          <Sparkles className="mx-auto size-7 text-accent" />
-          <h2 className="mt-3 font-display text-xl font-bold text-fg">
-            Start real evidence analysis
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-fg-dim">
-            This uploads {files.length} evidence file
-            {files.length === 1 ? "" : "s"} to private storage and invokes the
-            server-side Gemini integration. Failed analysis remains a visible
-            failure and can be retried.
-          </p>
+        <Panel className="max-w-3xl p-6">
+          <div className="text-center">
+            <Sparkles className="mx-auto size-7 text-accent" />
+            <h2 className="mt-3 font-display text-xl font-bold text-fg">
+              Review files
+            </h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-fg-dim">
+              These {files.length} evidence file{files.length === 1 ? "" : "s"}{" "}
+              will be uploaded to private storage and analyzed by the server-side
+              Gemini integration.
+            </p>
+          </div>
+          <div className="mt-6 divide-y divide-line rounded-md border border-line">
+            {files.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 p-4 text-left">
+                <EvidenceIcon type={item.type} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-mono text-sm text-fg">{item.file.name}</p>
+                  <p className="text-xs text-fg-dim">
+                    {item.type} · {formatFileSize(item.file.size)}
+                  </p>
+                </div>
+                <StatusBadge status="ready" />
+                <button
+                  aria-label={`Remove ${item.file.name}`}
+                  onClick={() =>
+                    setFiles((current) => current.filter((file) => file.id !== item.id))
+                  }
+                >
+                  <X className="size-4 text-fg-dim hover:text-crimson" />
+                </button>
+              </div>
+            ))}
+          </div>
           <div className="mt-6 flex justify-center gap-2">
-            <Button variant="ghost" onClick={() => setStep("evidence")}>
-              Back
-            </Button>
+            <Button variant="ghost" onClick={() => setStep("evidence")}>Back</Button>
             <Button
               variant="primary"
               loading={busy}
+              disabled={!files.length}
               icon={<Sparkles className="size-4" />}
               onClick={startAnalysis}
             >
