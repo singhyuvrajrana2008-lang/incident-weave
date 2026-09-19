@@ -179,3 +179,45 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Light theme overrides — all existing semantic Tailwind tokens reuse these variables. */
+html.light {
+  color-scheme: light;
+  --color-bg: #f5f7fa;
+  --color-bg-2: #edf2f6;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-surface-3: #e6edf3;
+  --color-raised: #ffffff;
+  --color-raised-2: #f7fafc;
+  --color-fg: #17212b;
+  --color-fg-muted: #50606e;
+  --color-fg-dim: #697987;
+  --color-fg-faint: #93a1ad;
+  --color-line: #dce4eb;
+  --color-line-2: #cbd6df;
+  --color-line-strong: #aab9c6;
+  --color-accent: #1976d2;
+  --color-accent-2: #0f9f9a;
+  --color-accent-3: #2563a8;
+  --color-accent-dim: #e8f2fc;
+  --color-crimson: #c63f46;
+  --color-crimson-2: #b4232a;
+  --color-crimson-dim: #fdebec;
+  --color-amber: #b77906;
+  --color-amber-2: #a16207;
+  --color-amber-dim: #fff6db;
+  --color-verified: #138a59;
+  --color-verified-2: #15803d;
+  --color-verified-dim: #e5f7ee;
+}
+html.light #root {
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, rgba(25, 118, 210, 0.055), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(15, 159, 154, 0.035), transparent 55%);
+}
+html.light .grid-texture {
+  background-image:
+    linear-gradient(to right, rgba(23,33,43,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(23,33,43,0.025) 1px, transparent 1px);
+}

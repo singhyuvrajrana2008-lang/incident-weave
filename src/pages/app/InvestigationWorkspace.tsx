@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, Link, useNavigate } from "react-router-dom";
 import {
   RefreshCw,
@@ -39,6 +39,7 @@ export default function InvestigationWorkspace() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const { toast } = useApp();
+  const addEvidenceInputRef = useRef<HTMLInputElement>(null);
   const [inv, setInv] = useState<Investigation | null | undefined>(undefined);
   const [tab, setTab] = useState(params.get("tab") ?? "timeline");
 
@@ -52,6 +53,7 @@ export default function InvestigationWorkspace() {
   const [deleting, setDeleting] = useState(false);
   const [rerunRunId, setRerunRunId] = useState<string | null>(null);
   const [rerunStarting, setRerunStarting] = useState(false);
+  const [addingEvidence, setAddingEvidence] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -132,6 +134,25 @@ export default function InvestigationWorkspace() {
     setSelContradiction(null);
   }
 
+  async function addEvidence(files: File[]) {
+    if (!id || !inv || !files.length || addingEvidence || rerunStarting || rerunRunId) return;
+    setAddingEvidence(true);
+    try {
+      await investigationService.uploadEvidence(inv.id, files);
+      toast({ title: "Evidence uploaded", kind: "success", desc: "Starting a fresh analysis with the updated evidence set." });
+      const runId = await investigationService.rerunAnalysis(inv.id);
+      setRerunRunId(runId);
+    } catch (reason) {
+      toast({
+        title: "Could not add evidence",
+        kind: "danger",
+        desc: reason instanceof Error ? reason.message : "Evidence upload or re-analysis failed.",
+      });
+    } finally {
+      setAddingEvidence(false);
+    }
+  }
+
   async function deleteInvestigation() {
     if (!id || !inv || deleting) return;
     if (!window.confirm(`Delete “${inv.name}”? This permanently removes the investigation, its evidence records, analysis results, and private Storage files.`)) return;
@@ -164,6 +185,7 @@ export default function InvestigationWorkspace() {
       <Page>
         <PageHeader eyebrow="Live analysis" title={inv.name} subtitle="Results will appear here after the configured analysis service completes." />
         <AnalysisProgress
+          key={rerunRunId}
           analysisRunId={rerunRunId}
           onComplete={() => { setRerunRunId(null); setReloadToken((value) => value + 1); }}
           onRetry={() => setRerunRunId(null)}
@@ -217,7 +239,28 @@ export default function InvestigationWorkspace() {
                 }
               }}
             >Re-run analysis</Button>
-            <Button variant="secondary" size="sm" icon={<Plus className="size-3.5" />} onClick={() => toast({ title: "Add evidence", kind: "info", desc: "Open the intake to add sources." })}>Add evidence</Button>
+            <input
+              ref={addEvidenceInputRef}
+              hidden
+              type="file"
+              multiple
+              accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.md,.mp3,.wav,.m4a,.webm"
+              onChange={(event) => {
+                const selected = Array.from(event.target.files ?? []);
+                event.currentTarget.value = "";
+                void addEvidence(selected);
+              }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={addingEvidence}
+              disabled={addingEvidence || rerunStarting || !!rerunRunId}
+              icon={<Plus className="size-3.5" />}
+              onClick={() => addEvidenceInputRef.current?.click()}
+            >
+              Add evidence
+            </Button>
             <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />} onClick={() => toast({ title: "Export started", kind: "success", desc: "Preparing investigation report." })}>Export</Button>
             <div className="relative">
               <Button variant="ghost" size="sm" className="px-2" aria-label="Investigation actions" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><MoreHorizontal className="size-4" /></Button>
