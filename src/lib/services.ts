@@ -180,6 +180,7 @@ function toEvidence(row: Record<string, unknown>): Evidence {
     status: row.status as Evidence["status"] ?? "processing",
     confidence: extraction?.confidence as Evidence["confidence"] ?? "medium",
     sourceId: String(row.id).slice(0, 8),
+    summary: typeof extraction?.summary === "string" ? extraction.summary : undefined,
     observations: Array.isArray(extraction?.observations)
       ? extraction!.observations as string[]
       : [],
