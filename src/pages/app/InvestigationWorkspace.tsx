@@ -174,27 +174,27 @@ export default function InvestigationWorkspace() {
         .join("");
 
       const conflictRows = inv.contradictions
-        .map((c) => "<article class=\\"finding danger\\"><div class=\\"eyebrow\\">Conflict · " + escapeHtml(c.code) + "</div><h3>" + escapeHtml(c.title) + "</h3><p>" + escapeHtml(c.issue) + "</p><small>" + escapeHtml(c.detail) + "</small></article>")
+        .map((c) => "<article class=\"finding danger\"><div class=\"eyebrow\">Conflict · " + escapeHtml(c.code) + "</div><h3>" + escapeHtml(c.title) + "</h3><p>" + escapeHtml(c.issue) + "</p><small>" + escapeHtml(c.detail) + "</small></article>")
         .join("");
 
       const unknownRows = inv.unknowns
-        .map((u) => "<article class=\\"finding warn\\"><div class=\\"eyebrow\\">" + escapeHtml(u.window) + "</div><h3>" + escapeHtml(u.title) + "</h3><p>" + escapeHtml(u.description) + "</p><small>Status: " + escapeHtml(u.status) + "</small></article>")
+        .map((u) => "<article class=\"finding warn\"><div class=\"eyebrow\">" + escapeHtml(u.window) + "</div><h3>" + escapeHtml(u.title) + "</h3><p>" + escapeHtml(u.description) + "</p><small>Status: " + escapeHtml(u.status) + "</small></article>")
         .join("");
 
-      const html = "<!doctype html><html><head><meta charset=\\"utf-8\\"><title>" + escapeHtml(inv.name) + " — IncidentWeave Report</title><style>"
+      const html = "<!doctype html><html><head><meta charset=\"utf-8\"><title>" + escapeHtml(inv.name) + " — IncidentWeave Report</title><style>"
         + "@page{size:A4;margin:16mm}body{font-family:Arial,sans-serif;color:#15181d;font-size:11px;line-height:1.5;margin:0}"
         + "h1{font-size:25px;margin:0 0 5px}h2{font-size:16px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:5px}"
         + ".sub,.muted,small{color:#66707a}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.metric{border:1px solid #ddd;padding:8px;border-radius:5px;background:#f7f8fa}.metric strong{display:block;font-size:15px}.metric span{font-size:9px;text-transform:uppercase;color:#66707a}"
         + "table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;padding:6px;border-bottom:1px solid #e4e7ea}th{background:#f0f2f4;font-size:9px;text-transform:uppercase}"
         + ".finding{border:1px solid #ddd;border-left:3px solid #999;padding:8px;margin:7px 0}.danger{border-left-color:#c4414a}.warn{border-left-color:#a96f06}.eyebrow{font-size:9px;color:#66707a;text-transform:uppercase;letter-spacing:.08em}.footer{margin-top:24px;border-top:1px solid #ddd;padding-top:7px;color:#7b858f;font-size:9px}"
         + "</style></head><body>"
-        + "<div><div class=\\"sub\\">INCIDENTWEAVE · INVESTIGATION REPORT</div><h1>" + escapeHtml(inv.name) + "</h1><div class=\\"sub\\">" + escapeHtml(inv.description) + " · Incident date: " + escapeHtml(inv.incidentDate) + " · Last analyzed: " + escapeHtml(inv.updatedAt) + "</div>"
-        + "<div class=\\"meta\\"><div class=\\"metric\\"><strong>" + escapeHtml(inv.confidence) + "%</strong><span>Confidence</span></div><div class=\\"metric\\"><strong>" + escapeHtml(inv.evidenceCount) + "</strong><span>Evidence</span></div><div class=\\"metric\\"><strong>" + escapeHtml(inv.contradictionCount) + "</strong><span>Conflicts</span></div><div class=\\"metric\\"><strong>" + escapeHtml(inv.unknownCount) + "</strong><span>Missing pieces</span></div></div></div>"
-        + "<h2>Evidence</h2><table><thead><tr><th>File</th><th>Type</th><th>Size</th><th>Status</th><th>Relevant time</th></tr></thead><tbody>" + (evidenceRows || "<tr><td colspan=\\"5\\">No evidence.</td></tr>") + "</tbody></table>"
-        + "<h2>Timeline</h2><table><thead><tr><th>Time</th><th>Event</th><th>Description</th><th>Confidence</th></tr></thead><tbody>" + (timelineRows || "<tr><td colspan=\\"4\\">No timeline events.</td></tr>") + "</tbody></table>"
-        + "<h2>Conflicts</h2>" + (conflictRows || "<p class=\\"muted\\">No contradictions detected.</p>")
-        + "<h2>Missing pieces</h2>" + (unknownRows || "<p class=\\"muted\\">No open unknowns.</p>")
-        + "<div class=\\"footer\\">Generated from IncidentWeave on " + escapeHtml(new Date().toLocaleString()) + ". AI findings are source-attributed decision support, not an autonomous verdict.</div>"
+        + "<div><div class=\"sub\">INCIDENTWEAVE · INVESTIGATION REPORT</div><h1>" + escapeHtml(inv.name) + "</h1><div class=\"sub\">" + escapeHtml(inv.description) + " · Incident date: " + escapeHtml(inv.incidentDate) + " · Last analyzed: " + escapeHtml(inv.updatedAt) + "</div>"
+        + "<div class=\"meta\"><div class=\"metric\"><strong>" + escapeHtml(inv.confidence) + "%</strong><span>Confidence</span></div><div class=\"metric\"><strong>" + escapeHtml(inv.evidenceCount) + "</strong><span>Evidence</span></div><div class=\"metric\"><strong>" + escapeHtml(inv.contradictionCount) + "</strong><span>Conflicts</span></div><div class=\"metric\"><strong>" + escapeHtml(inv.unknownCount) + "</strong><span>Missing pieces</span></div></div></div>"
+        + "<h2>Evidence</h2><table><thead><tr><th>File</th><th>Type</th><th>Size</th><th>Status</th><th>Relevant time</th></tr></thead><tbody>" + (evidenceRows || "<tr><td colspan=\"5\">No evidence.</td></tr>") + "</tbody></table>"
+        + "<h2>Timeline</h2><table><thead><tr><th>Time</th><th>Event</th><th>Description</th><th>Confidence</th></tr></thead><tbody>" + (timelineRows || "<tr><td colspan=\"4\">No timeline events.</td></tr>") + "</tbody></table>"
+        + "<h2>Conflicts</h2>" + (conflictRows || "<p class=\"muted\">No contradictions detected.</p>")
+        + "<h2>Missing pieces</h2>" + (unknownRows || "<p class=\"muted\">No open unknowns.</p>")
+        + "<div class=\"footer\">Generated from IncidentWeave on " + escapeHtml(new Date().toLocaleString()) + ". AI findings are source-attributed decision support, not an autonomous verdict.</div>"
         + "</body></html>";
 
       const reportWindow = window.open("", "_blank", "width=960,height=800");
