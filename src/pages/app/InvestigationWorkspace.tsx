@@ -71,6 +71,15 @@ export default function InvestigationWorkspace() {
     if (tab) setParams({ tab }, { replace: true });
   }, [tab]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
+
   // derive highlighted sets from current selection
   const highlight = useMemo(() => {
     const events = new Set<string>();
@@ -213,10 +222,43 @@ export default function InvestigationWorkspace() {
             <div className="relative">
               <Button variant="ghost" size="sm" className="px-2" aria-label="Investigation actions" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><MoreHorizontal className="size-4" /></Button>
               {menuOpen && (
-                <div className="absolute right-0 top-10 z-20 min-w-48 rounded-md border border-line-2 bg-raised p-1 shadow-xl">
-                  <button className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-fg-muted hover:bg-surface-2 hover:text-fg" onClick={async () => { if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href); setMenuOpen(false); toast({ title: "Link copied", kind: "success", desc: "Investigation link copied to your clipboard." }); }}>Copy investigation link</button>
-                  <button disabled={deleting} className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-crimson hover:bg-crimson/10 disabled:opacity-50" onClick={() => { setMenuOpen(false); void deleteInvestigation(); }}>{deleting ? "Deleting…" : "Delete investigation"}</button>
-                </div>
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close investigation actions"
+                    className="fixed inset-0 z-10 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-10 z-20 min-w-48 rounded-md border border-line-2 bg-raised p-1 shadow-xl"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-fg-muted hover:bg-surface-2 hover:text-fg"
+                      onClick={async () => {
+                        if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href);
+                        setMenuOpen(false);
+                        toast({ title: "Link copied", kind: "success", desc: "Investigation link copied to your clipboard." });
+                      }}
+                    >
+                      Copy investigation link
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={deleting}
+                      className="flex w-full items-center rounded-sm px-3 py-2 text-left text-sm text-crimson hover:bg-crimson/10 disabled:opacity-50"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        void deleteInvestigation();
+                      }}
+                    >
+                      {deleting ? "Deleting…" : "Delete investigation"}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
