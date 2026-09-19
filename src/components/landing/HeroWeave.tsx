@@ -2,10 +2,10 @@ import { motion } from "motion/react";
 import { FileText, Image, MessageSquare, Mic, Phone } from "lucide-react";
 
 const fragments = [
-  { icon: Image, label: "Screenshot", color: "#60a5fa", y: 34 },
-  { icon: Phone, label: "Call log", color: "#38bdf8", y: 82 },
+  { icon: Image, label: "Screenshot", color: "#6aa9ff", y: 34 },
+  { icon: Phone, label: "Call log", color: "#53d6cb", y: 82 },
   { icon: FileText, label: "PDF", color: "#f05252", y: 130 },
-  { icon: MessageSquare, label: "Message", color: "#22d3ee", y: 178 },
+  { icon: MessageSquare, label: "Message", color: "#6aa9ff", y: 178 },
   { icon: Mic, label: "Recording", color: "#34d399", y: 226 },
 ];
 
@@ -63,8 +63,8 @@ export function HeroWeave() {
           cx="230"
           cy="150"
           r="22"
-          fill="#0b0f14"
-          stroke="#38bdf8"
+          fill="var(--color-void)"
+          stroke="var(--color-accent)"
           strokeWidth="1.5"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -75,7 +75,7 @@ export function HeroWeave() {
           cx="230"
           cy="150"
           r="7"
-          fill="#38bdf8"
+          fill="var(--color-accent)"
           animate={{ opacity: [0.45, 1, 0.45], scale: [0.9, 1.05, 0.9] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           style={{ transformOrigin: "230px 150px" }}

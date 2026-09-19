@@ -1,57 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Space Grotesk', 'Sora', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  /* Base grounds — lifted a step for a softer, less inky feel */
-  --color-void: #0f141b;
-  --color-bg: #131a23;
-  --color-bg-2: #19212c;
-  --color-surface: #1e2733;
-  --color-surface-2: #232e3b;
-  --color-surface-3: #293544;
-  --color-raised: #2e3b4b;
-  --color-raised-2: #354354;
+  /* Near-black analytical palette */
+  --color-void: #050607;
+  --color-bg: #08090b;
+  --color-bg-2: #0c0e11;
+  --color-surface: #111317;
+  --color-surface-2: #171a1f;
+  --color-surface-3: #1d2127;
+  --color-raised: #191c21;
+  --color-raised-2: #20242a;
 
   /* Text */
-  --color-fg: #eef2f7;
-  --color-fg-muted: #aab6c3;
-  --color-fg-dim: #7a8794;
-  --color-fg-faint: #59646f;
+  --color-fg: #f3f5f7;
+  --color-fg-muted: #aab1bb;
+  --color-fg-dim: #747d88;
+  --color-fg-faint: #4f5863;
 
   /* Borders */
-  --color-line: #2a3542;
-  --color-line-2: #35424f;
-  --color-line-strong: #4a5a6b;
+  --color-line: #20242a;
+  --color-line-2: #2b3037;
+  --color-line-strong: #3b424c;
 
-  /* Accent - clean electric azure (no purple cast) */
-  --color-accent: #56a8f5;
-  --color-accent-2: #38e0d4;
-  --color-accent-3: #7bc0ff;
-  --color-accent-dim: #10243a;
+  /* Accent */
+  --color-accent: #6aa9ff;
+  --color-accent-2: #53d6cb;
+  --color-accent-3: #8bc0ff;
+  --color-accent-dim: #0d1b2d;
 
   /* Semantics */
-  --color-crimson: #f05252;
-  --color-crimson-2: #dc2626;
-  --color-crimson-dim: #2a1214;
-  --color-amber: #fbbf24;
-  --color-amber-2: #f59e0b;
-  --color-amber-dim: #2a2011;
-  --color-verified: #34d399;
-  --color-verified-2: #22c55e;
-  --color-verified-dim: #0f2820;
+  --color-crimson: #f05a61;
+  --color-crimson-2: #dc3f48;
+  --color-crimson-dim: #291215;
+  --color-amber: #f4c451;
+  --color-amber-2: #e5aa25;
+  --color-amber-dim: #2a210f;
+  --color-verified: #43d39a;
+  --color-verified-2: #26b978;
+  --color-verified-dim: #10271e;
 
   --radius-xs: 3px;
   --radius-sm: 5px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
-
 @layer base {
   html {
     color-scheme: dark;
@@ -180,44 +177,46 @@
   }
 }
 
-/* Light theme overrides — all existing semantic Tailwind tokens reuse these variables. */
+
+/* Light theme uses the same semantic surfaces, with a warm-neutral paper-like ground. */
 html.light {
   color-scheme: light;
-  --color-bg: #f5f7fa;
-  --color-bg-2: #edf2f6;
+  --color-void: #ffffff;
+  --color-bg: #f5f6f8;
+  --color-bg-2: #eceef2;
   --color-surface: #ffffff;
-  --color-surface-2: #f1f5f9;
-  --color-surface-3: #e6edf3;
+  --color-surface-2: #f0f2f5;
+  --color-surface-3: #e3e7ec;
   --color-raised: #ffffff;
-  --color-raised-2: #f7fafc;
-  --color-fg: #17212b;
-  --color-fg-muted: #50606e;
-  --color-fg-dim: #697987;
-  --color-fg-faint: #93a1ad;
-  --color-line: #dce4eb;
-  --color-line-2: #cbd6df;
-  --color-line-strong: #aab9c6;
-  --color-accent: #1976d2;
-  --color-accent-2: #0f9f9a;
-  --color-accent-3: #2563a8;
-  --color-accent-dim: #e8f2fc;
-  --color-crimson: #c63f46;
-  --color-crimson-2: #b4232a;
-  --color-crimson-dim: #fdebec;
-  --color-amber: #b77906;
-  --color-amber-2: #a16207;
-  --color-amber-dim: #fff6db;
-  --color-verified: #138a59;
-  --color-verified-2: #15803d;
-  --color-verified-dim: #e5f7ee;
+  --color-raised-2: #f7f8fa;
+  --color-fg: #161a20;
+  --color-fg-muted: #4f5a67;
+  --color-fg-dim: #6e7985;
+  --color-fg-faint: #929ca7;
+  --color-line: #d9dfe6;
+  --color-line-2: #c9d1da;
+  --color-line-strong: #abb6c2;
+  --color-accent: #1769d1;
+  --color-accent-2: #0b978f;
+  --color-accent-3: #2a6aa9;
+  --color-accent-dim: #e8f1fb;
+  --color-crimson: #c4414a;
+  --color-crimson-2: #b32c36;
+  --color-crimson-dim: #fdebed;
+  --color-amber: #a96f06;
+  --color-amber-2: #8e5c00;
+  --color-amber-dim: #fff5d8;
+  --color-verified: #137b52;
+  --color-verified-2: #0d6c47;
+  --color-verified-dim: #e5f6ee;
 }
 html.light #root {
   background-image:
-    radial-gradient(1200px 600px at 80% -10%, rgba(25, 118, 210, 0.055), transparent 60%),
-    radial-gradient(900px 500px at 0% 110%, rgba(15, 159, 154, 0.035), transparent 55%);
+    radial-gradient(1200px 600px at 80% -10%, rgba(23, 105, 209, 0.05), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(11, 151, 143, 0.035), transparent 55%);
 }
 html.light .grid-texture {
   background-image:
-    linear-gradient(to right, rgba(23,33,43,0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(23,33,43,0.025) 1px, transparent 1px);
+    linear-gradient(to right, rgba(22,26,32,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(22,26,32,0.025) 1px, transparent 1px);
 }

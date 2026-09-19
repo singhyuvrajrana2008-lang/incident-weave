@@ -12,12 +12,16 @@ import {
   ShieldCheck,
   Menu,
   X,
+  Sun,
+  Moon,
+  Download,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/ui";
 import { HeroWeave } from "../components/landing/HeroWeave";
+import { useApp } from "../store/AppContext";
 
 function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   return (
@@ -62,15 +66,17 @@ const publicNav = [
   { label: "Product", href: "#product" },
   { label: "How It Works", href: "#how" },
   { label: "Investigation", href: "#workspace" },
+  { label: "Demo", href: "#demo" },
   { label: "About", href: "#about" },
 ];
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useApp();
 
   // Scroll-driven typography + color shift on the hero heading
   const { scrollYProgress } = useScroll();
-  const headingColor = useTransform(scrollYProgress, [0, 0.18], ["#eef2f7", "#56a8f5"]);
+  const headingColor = useTransform(scrollYProgress, [0, 0.18], theme === "dark" ? ["#f3f5f7", "#6aa9ff"] : ["#161a20", "#1769d1"]);
   const headingSpacing = useTransform(scrollYProgress, [0, 0.18], ["-0.02em", "0.05em"]);
   const heroLift = useTransform(scrollYProgress, [0, 0.25], [0, -40]);
   const heroFade = useTransform(scrollYProgress, [0, 0.25], [1, 0.55]);
@@ -93,6 +99,15 @@ export default function Landing() {
             ))}
           </nav>
           <div className="hidden items-center gap-2 md:flex">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="grid size-9 place-items-center rounded-sm border border-line-2 bg-surface/60 text-fg-muted transition-colors hover:border-line-strong hover:bg-surface-2 hover:text-fg"
+            >
+              {theme === "dark" ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+            </button>
             <Link to="/sign-in"><Button variant="ghost" size="sm">Sign In</Button></Link>
             <Link to="/sign-up"><Button variant="primary" size="sm">Start Investigation</Button></Link>
           </div>
@@ -107,6 +122,15 @@ export default function Landing() {
                 <a key={n.label} href={n.href} onClick={() => setMenuOpen(false)} className="text-sm text-fg-muted">{n.label}</a>
               ))}
               <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="grid size-8 shrink-0 place-items-center rounded-sm border border-line-2 text-fg-muted"
+                  title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                </button>
                 <Link to="/sign-in" className="flex-1"><Button variant="secondary" size="sm" className="w-full">Sign In</Button></Link>
                 <Link to="/sign-up" className="flex-1"><Button variant="primary" size="sm" className="w-full">Start</Button></Link>
               </div>
@@ -241,6 +265,35 @@ export default function Landing() {
               </Reveal>
             ))}
           </div>
+        </Section>
+      </div>
+
+      {/* Tester / demo */}
+      <div className="border-y border-line bg-bg-2">
+        <Section id="demo" eyebrow="Safe demo" title="Test the workflow with synthetic evidence.">
+          <Reveal>
+            <InteractiveBox className="grid gap-5 rounded-lg border border-line bg-surface p-6 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="text-[15px] leading-relaxed text-fg-muted">
+                  Use these fictional, non-sensitive samples to test the full flow: upload evidence, run analysis,
+                  inspect conflicts, and add more evidence to trigger a fresh reconstruction.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-fg-dim">
+                  <span className="rounded-full border border-line-2 bg-surface-2 px-2.5 py-1">Synthetic</span>
+                  <span className="rounded-full border border-line-2 bg-surface-2 px-2.5 py-1">Non-sensitive</span>
+                  <span className="rounded-full border border-line-2 bg-surface-2 px-2.5 py-1">Text evidence</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
+                <a href="/demo/incident-log.txt" download className="inline-flex">
+                  <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />}>Incident log</Button>
+                </a>
+                <a href="/demo/witness-note.txt" download className="inline-flex">
+                  <Button variant="secondary" size="sm" icon={<Download className="size-3.5" />}>Witness note</Button>
+                </a>
+              </div>
+            </InteractiveBox>
+          </Reveal>
         </Section>
       </div>
 
