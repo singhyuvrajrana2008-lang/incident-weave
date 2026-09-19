@@ -1,3 +1,4 @@
+import { formatFileSize } from "./format"
 import { requireSupabase, supabase } from "./supabase"
 import type {
   Investigation,
@@ -173,7 +174,7 @@ function toEvidence(row: Record<string, unknown>): Evidence {
     id: String(row.id),
     filename: String(row.filename),
     type: fileType(row.mime_type as string | null, String(row.filename)),
-    size: `${(Number(row.size_bytes ?? 0) / 1e6).toFixed(1)} MB`,
+    size: formatFileSize(Number(row.size_bytes ?? 0)),
     uploadedAt: relative(row.created_at as string),
     relevantTime: String(extraction?.relevant_time ?? "—"),
     status: row.status as Evidence["status"] ?? "processing",
