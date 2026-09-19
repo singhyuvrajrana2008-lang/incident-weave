@@ -1,0 +1,9 @@
+INCIDENTWEAVE DEMO EVIDENCE — FICTIONAL DATA
+Source: Witness note
+Case: Northbridge Warehouse — 14 June 2026
+
+"I reached Loading Bay 2 shortly after 10:00. I did not see a van there. I spoke to the supervisor around 10:25 and reported that the area looked clear."
+
+Testing note: This statement intentionally contains a possible timing/location conflict with the incident log so the analysis workflow has something to inspect.
+
+This file is synthetic evidence created for product testing only.
