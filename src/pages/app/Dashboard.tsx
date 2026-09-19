@@ -181,29 +181,45 @@ export default function Dashboard() {
             <Panel>
               <PanelHeader title="Activity" subtitle="Latest across your workspace" />
               <div className="p-5">
-                <div className="relative space-y-4 pl-5">
-                  <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-line" />
-                  {(primary?.activity ?? []).map((a, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                      className="relative"
-                    >
-                      <span className={cn("absolute -left-5 top-1 size-2.5 rounded-full ring-4 ring-surface",
-                        activityTone[a.kind] === "accent" && "bg-accent",
-                        activityTone[a.kind] === "amber" && "bg-amber",
-                        activityTone[a.kind] === "verified" && "bg-verified",
-                        activityTone[a.kind] === "crimson" && "bg-crimson",
-                      )} />
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-mono text-xs text-fg-dim tabular">{a.time}</span>
-                      </div>
-                      <p className="text-sm text-fg-muted">{a.text}</p>
-                    </motion.div>
-                  ))}
-                </div>
+                {primary?.activity?.length ? (
+                  <div className="relative space-y-4 pl-5">
+                    <div className="absolute bottom-1.5 left-[5px] top-1.5 w-px bg-line" />
+                    {primary.activity.map((a, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="relative"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "absolute -left-5 top-1 size-2.5 rounded-full ring-4 ring-surface",
+                            activityTone[a.kind] === "accent" && "bg-accent",
+                            activityTone[a.kind] === "amber" && "bg-amber",
+                            activityTone[a.kind] === "verified" && "bg-verified",
+                            activityTone[a.kind] === "crimson" && "bg-crimson",
+                          )}
+                        />
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-mono text-xs tabular text-fg-dim">{a.time}</span>
+                        </div>
+                        <p className="text-sm text-fg-muted">{a.text}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-32 flex-col items-center justify-center rounded-md border border-dashed border-line-2 bg-surface-2/40 px-4 text-center">
+                    <div className="mb-2 grid size-9 place-items-center rounded-sm border border-line-2 bg-surface text-fg-dim">
+                      <Clock className="size-4" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm font-medium text-fg-muted">No recent activity</p>
+                    <p className="mt-1 max-w-xs text-xs leading-relaxed text-fg-faint">
+                      Activity will appear here as investigations are created, analyzed, and reviewed.
+                    </p>
+                  </div>
+                )}
               </div>
             </Panel>
           </div>
